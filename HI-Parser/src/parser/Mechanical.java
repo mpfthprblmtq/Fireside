@@ -38,25 +38,23 @@ public class Mechanical {
     private String dishwasher_finish;
     private String dishwasher_notes;
     
-    private int microwave_score;
-    private String microwave_model;
-    private String microwave_finish;
-    private String microwave_notes;
-    
     private int disposal_score;
     private String disposal_notes;
     
     private int hood_score;
+    private String hood_microwave;
     private String hood_model;
     private String hood_finish;
     private String hood_notes;
     
     private int hvac_score;
     private String hvac_model;
+    private String hvac_type;
     private String hvac_notes;
     
     private int water_heater_score;
     private String water_heater_model;
+    private String water_heater_type;
     private String water_heater_notes;
     
     private int washer_dryer_score;
@@ -196,48 +194,6 @@ public class Mechanical {
      */
     public void setDishwasher_notes(String dishwasher_notes) {
         this.dishwasher_notes = dishwasher_notes;
-    }
-
-    /**
-     * @return the microwave_score
-     */
-    public int getMicrowave_score() {
-        return microwave_score;
-    }
-
-    /**
-     * @param microwave_score the microwave_score to set
-     */
-    public void setMicrowave_score(int microwave_score) {
-        this.microwave_score = microwave_score;
-    }
-
-    /**
-     * @return the microwave_model
-     */
-    public String getMicrowave_model() {
-        return microwave_model;
-    }
-
-    /**
-     * @param microwave_model the microwave_model to set
-     */
-    public void setMicrowave_model(String microwave_model) {
-        this.microwave_model = microwave_model;
-    }
-
-    /**
-     * @return the microwave_notes
-     */
-    public String getMicrowave_notes() {
-        return microwave_notes;
-    }
-
-    /**
-     * @param microwave_notes the microwave_notes to set
-     */
-    public void setMicrowave_notes(String microwave_notes) {
-        this.microwave_notes = microwave_notes;
     }
 
     /**
@@ -507,17 +463,17 @@ public class Mechanical {
     }
 
     /**
-     * @return the microwave_finish
+     * @return the hood_microwave
      */
-    public String getMicrowave_finish() {
-        return microwave_finish;
+    public String getHood_microwave() {
+        return hood_microwave;
     }
 
     /**
-     * @param microwave_finish the microwave_finish to set
+     * @param hood_microwave the hood_microwave to set
      */
-    public void setMicrowave_finish(String microwave_finish) {
-        this.microwave_finish = microwave_finish;
+    public void setHood_microwave(String hood_microwave) {
+        this.hood_microwave = hood_microwave;
     }
 
     /**
@@ -575,6 +531,32 @@ public class Mechanical {
     public void setFridge_icemaker(String fridge_icemaker) {
         this.fridge_icemaker = fridge_icemaker;
     }
-    
-    
-}
+
+    /**
+     * @return the hvac_type
+     */
+    public String getHvac_type() {
+        return hvac_type;
+    }
+
+    /**
+     * @param hvac_type the hvac_type to set
+     */
+    public void setHvac_type(String hvac_type) {
+        this.hvac_type = hvac_type;
+    }
+
+    /**
+     * @return the water_heater_type
+     */
+    public String getWater_heater_type() {
+        return water_heater_type;
+    }
+
+    /**
+     * @param water_heater_type the water_heater_type to set
+     */
+    public void setWater_heater_type(String water_heater_type) {
+        this.water_heater_type = water_heater_type;
+    }
+} // end Mechanical.java

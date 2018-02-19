@@ -41,6 +41,7 @@ public class Overall {
     
     private String general_comments;
     
+    private String unaccounted_items;
     private String unaccounted_sections;
     
     /**
@@ -273,4 +274,18 @@ public class Overall {
     public void setUnaccounted_sections(String unaccounted_sections) {
         this.unaccounted_sections = unaccounted_sections;
     }
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Overall.java

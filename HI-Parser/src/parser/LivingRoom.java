@@ -53,21 +53,16 @@ public class LivingRoom {
     private String blindsdrapes_type;
     private String blindsdrapes_notes;
     
-    private int ceilingfan_score;
-    private String ceilingfan_notes;
-    
     private int patio_score;
     private String patio_door_type;
-    private String patio_door_variety;
-    private String patio_door_material;
+    private String patio_balcony;
     private String patio_notes;
     
     private int fireplace_score;
     private String fireplace_type;
     private String fireplace_notes;
     
-    //private int furnishings_score;
-    //private String furnishings_notes;
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -329,34 +324,6 @@ public class LivingRoom {
     }
 
     /**
-     * @return the ceilingfan_score
-     */
-    public int getCeilingfan_score() {
-        return ceilingfan_score;
-    }
-
-    /**
-     * @param ceilingfan_score the ceilingfan_score to set
-     */
-    public void setCeilingfan_score(int ceilingfan_score) {
-        this.ceilingfan_score = ceilingfan_score;
-    }
-
-    /**
-     * @return the ceilingfan_notes
-     */
-    public String getCeilingfan_notes() {
-        return ceilingfan_notes;
-    }
-
-    /**
-     * @param ceilingfan_notes the ceilingfan_notes to set
-     */
-    public void setCeilingfan_notes(String ceilingfan_notes) {
-        this.ceilingfan_notes = ceilingfan_notes;
-    }
-
-    /**
      * @return the patio_score
      */
     public int getPatio_score() {
@@ -411,34 +378,6 @@ public class LivingRoom {
     public void setFireplace_notes(String fireplace_notes) {
         this.fireplace_notes = fireplace_notes;
     }
-
-//    /**
-//     * @return the furnishings_score
-//     */
-//    public int getFurnishings_score() {
-//        return furnishings_score;
-//    }
-//
-//    /**
-//     * @param furnishings_score the furnishings_score to set
-//     */
-//    public void setFurnishings_score(int furnishings_score) {
-//        this.furnishings_score = furnishings_score;
-//    }
-//
-//    /**
-//     * @return the furnishings_notes
-//     */
-//    public String getFurnishings_notes() {
-//        return furnishings_notes;
-//    }
-//
-//    /**
-//     * @param furnishings_notes the furnishings_notes to set
-//     */
-//    public void setFurnishings_notes(String furnishings_notes) {
-//        this.furnishings_notes = furnishings_notes;
-//    }
 
     /**
      * @return the wallsceiling_waterdamage
@@ -511,31 +450,17 @@ public class LivingRoom {
     }
 
     /**
-     * @return the patio_door_variety
-     */
-    public String getPatio_door_variety() {
-        return patio_door_variety;
-    }
-
-    /**
-     * @param patio_door_variety the patio_door_variety to set
-     */
-    public void setPatio_door_variety(String patio_door_variety) {
-        this.patio_door_variety = patio_door_variety;
-    }
-
-    /**
      * @return the patio_door_material
      */
-    public String getPatio_door_material() {
-        return patio_door_material;
+    public String getPatio_balcony() {
+        return patio_balcony;
     }
 
     /**
-     * @param patio_door_material the patio_door_material to set
+     * @param patio_balcony
      */
-    public void setPatio_door_material(String patio_door_material) {
-        this.patio_door_material = patio_door_material;
+    public void setPatio_balcony(String patio_balcony) {
+        this.patio_balcony = patio_balcony;
     }
 
     /**
@@ -621,6 +546,18 @@ public class LivingRoom {
     public void setLivingroom_comments(String livingroom_comments) {
         this.livingroom_comments = livingroom_comments;
     }
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end LivingRoom.java

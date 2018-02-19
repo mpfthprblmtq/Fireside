@@ -29,6 +29,8 @@ public class Fencing {
     private int gates_score;
     private String gates_notes;
     
+    private String unaccounted_items;
+    
     /**
      * Default constructor
      */
@@ -133,7 +135,18 @@ public class Fencing {
     public void setFencepickets_type(String fencepickets_type) {
         this.fencepickets_type = fencepickets_type;
     }
-    
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Fencing.java

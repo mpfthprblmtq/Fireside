@@ -29,7 +29,6 @@ public class Bedroom {
     private int door_score;
     private String door_type;
     private String door_variety;
-    private String door_material;
     private String door_notes;
     
     private int windows_score;
@@ -53,14 +52,13 @@ public class Bedroom {
     private String blindsdrapes_type;
     private String blindsdrapes_notes;
     
-    private int ceilingfan_score;
-    private String ceilingfan_notes;
-    
     private int closet_score;
     private String closet_door_type;
     private String closet_door_variety;
     private String closet_door_material;
     private String closet_notes;
+    
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -336,34 +334,6 @@ public class Bedroom {
     }
 
     /**
-     * @return the ceilingfan_score
-     */
-    public int getCeilingfan_score() {
-        return ceilingfan_score;
-    }
-
-    /**
-     * @param ceilingfan_score the ceilingfan_score to set
-     */
-    public void setCeilingfan_score(int ceilingfan_score) {
-        this.ceilingfan_score = ceilingfan_score;
-    }
-
-    /**
-     * @return the ceilingfan_notes
-     */
-    public String getCeilingfan_notes() {
-        return ceilingfan_notes;
-    }
-
-    /**
-     * @param ceilingfan_notes the ceilingfan_notes to set
-     */
-    public void setCeilingfan_notes(String ceilingfan_notes) {
-        this.ceilingfan_notes = ceilingfan_notes;
-    }
-
-    /**
      * @return the closet_score
      */
     public int getCloset_score() {
@@ -417,20 +387,6 @@ public class Bedroom {
      */
     public void setCloset_notes(String closet_notes) {
         this.closet_notes = closet_notes;
-    }
-
-    /**
-     * @return the door_material
-     */
-    public String getDoor_material() {
-        return door_material;
-    }
-
-    /**
-     * @param door_material the door_material to set
-     */
-    public void setDoor_material(String door_material) {
-        this.door_material = door_material;
     }
 
     /**
@@ -551,4 +507,18 @@ public class Bedroom {
     public void setLight_finish(String light_finish) {
         this.light_finish = light_finish;
     }
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Bedroom.java

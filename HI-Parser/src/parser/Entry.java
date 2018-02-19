@@ -63,6 +63,8 @@ public class Entry {
     private String closet_door_material;
     private String closet_notes;
     
+    private String unaccounted_items;
+    
     /**
      * Default constructor
      */
@@ -559,4 +561,18 @@ public class Entry {
     public void setEntry_comments(String entry_comments) {
         this.entry_comments = entry_comments;
     }
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Entry.java

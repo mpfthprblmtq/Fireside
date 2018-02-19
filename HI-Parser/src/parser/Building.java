@@ -21,10 +21,14 @@ import java.util.ArrayList;
 // class Building
 public class Building {
     
+    // picture subclass, with standard getters and setters
+    // used for exporting pictures with the URL and details
     public class Picture {
+        // ivars
         private String url;
         private String section;
         private String item;
+        // constructor
         public Picture(String section, String item, String url) {
             this.url = url;
             this.section = section;
@@ -52,8 +56,9 @@ public class Building {
         public String toString() {
             return section + " - " + item + ": " + url;
         }
-    }
+    } // end picture subclass
     
+    // ivars
     private String id;
     private String name;
     private String street;
@@ -63,6 +68,7 @@ public class Building {
     private String notes;
     private ArrayList<Picture> pictures;
     
+    // aspect ivars
     InteriorHallway interiorhallway;
     Dumpsters dumpsters;
     MainSupplies mainsupplies;
@@ -74,7 +80,7 @@ public class Building {
     Overall overall;
     
     /**
-     * Default constructor
+     * Loaded constructor, creates all the aspects of the building
      * @param id
      * @param name
      * @param street
@@ -105,7 +111,7 @@ public class Building {
     }
     
     /**
-     * Creates a picture object and adds it to the unit
+     * Creates a picture object and adds it to the building
      * @param url
      * @param section
      * @param item
@@ -226,10 +232,11 @@ public class Building {
         this.pictures = pictures;
     }
 
+    /**
+     * @return the String representation of the object
+     */
     @Override
     public String toString() {
         return "Building{" + "id=" + id + ", name=" + name + ", street=" + street + ", city=" + city + ", state=" + state + ", zipcode=" + zipcode + ", notes=" + notes + ", interiorhallway=" + interiorhallway + ", dumpsters=" + dumpsters + ", mainsupplies=" + mainsupplies + ", landscaping=" + landscaping + ", buildingexterior=" + buildingexterior + ", asphaltconcrete=" + asphaltconcrete + ", fencing=" + fencing + ", signage=" + signage + '}';
     }
-    
-    
-}
+} // end Building.java

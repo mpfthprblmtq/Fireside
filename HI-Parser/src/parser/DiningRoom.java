@@ -53,14 +53,7 @@ public class DiningRoom {
     private String blindsdrapes_type;
     private String blindsdrapes_notes;
     
-    private int ceilingfan_score;
-    private String ceilingfan_notes;
-    
-    private int closet_score;
-    private String closet_door_type;
-    private String closet_door_variety;
-    private String closet_door_material;
-    private String closet_notes;
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -336,90 +329,6 @@ public class DiningRoom {
     }
 
     /**
-     * @return the ceilingfan_score
-     */
-    public int getCeilingfan_score() {
-        return ceilingfan_score;
-    }
-
-    /**
-     * @param ceilingfan_score the ceilingfan_score to set
-     */
-    public void setCeilingfan_score(int ceilingfan_score) {
-        this.ceilingfan_score = ceilingfan_score;
-    }
-
-    /**
-     * @return the ceilingfan_notes
-     */
-    public String getCeilingfan_notes() {
-        return ceilingfan_notes;
-    }
-
-    /**
-     * @param ceilingfan_notes the ceilingfan_notes to set
-     */
-    public void setCeilingfan_notes(String ceilingfan_notes) {
-        this.ceilingfan_notes = ceilingfan_notes;
-    }
-
-    /**
-     * @return the closet_score
-     */
-    public int getCloset_score() {
-        return closet_score;
-    }
-
-    /**
-     * @param closet_score the closet_score to set
-     */
-    public void setCloset_score(int closet_score) {
-        this.closet_score = closet_score;
-    }
-
-    /**
-     * @return the closet_door_type
-     */
-    public String getCloset_door_type() {
-        return closet_door_type;
-    }
-
-    /**
-     * @param closet_door_type the closet_door_type to set
-     */
-    public void setCloset_door_type(String closet_door_type) {
-        this.closet_door_type = closet_door_type;
-    }
-
-    /**
-     * @return the closet_door_variety
-     */
-    public String getCloset_door_variety() {
-        return closet_door_variety;
-    }
-
-    /**
-     * @param closet_door_variety the closet_door_variety to set
-     */
-    public void setCloset_door_variety(String closet_door_variety) {
-        this.closet_door_variety = closet_door_variety;
-    }
-
-    /**
-     * @return the closet_notes
-     */
-    public String getCloset_notes() {
-        return closet_notes;
-    }
-
-    /**
-     * @param closet_notes the closet_notes to set
-     */
-    public void setCloset_notes(String closet_notes) {
-        this.closet_notes = closet_notes;
-    }
-
-    /**
      * @return the walls_type
      */
     public String getWalls_type() {
@@ -459,20 +368,6 @@ public class DiningRoom {
      */
     public void setDoor_material(String door_material) {
         this.door_material = door_material;
-    }
-
-    /**
-     * @return the closet_door_material
-     */
-    public String getCloset_door_material() {
-        return closet_door_material;
-    }
-
-    /**
-     * @param closet_door_material the closet_door_material to set
-     */
-    public void setCloset_door_material(String closet_door_material) {
-        this.closet_door_material = closet_door_material;
     }
 
     /**
@@ -544,6 +439,18 @@ public class DiningRoom {
     public void setDiningroom_comments(String diningroom_comments) {
         this.diningroom_comments = diningroom_comments;
     }
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end DiningRoom.java

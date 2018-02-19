@@ -49,6 +49,8 @@ public class Signage {
     private int firelane_score;
     private String firelane_notes;
     
+    private String unaccounted_items;
+    
     /**
      * Default constructor
      */
@@ -335,5 +337,18 @@ public class Signage {
     public void setFirelane_notes(String firelane_notes) {
         this.firelane_notes = firelane_notes;
     }
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Signage.java

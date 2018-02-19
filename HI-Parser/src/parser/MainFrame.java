@@ -1,8 +1,12 @@
 package parser;
 
 import java.awt.Desktop;
+import java.awt.Toolkit;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -10,6 +14,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -18,21 +24,25 @@ import javax.swing.ListModel;
 
 public class MainFrame extends javax.swing.JFrame {
 
+    // debug to console
+    boolean debugToConsole = true;
+
     // output path
     String home = System.getProperty("user.home");
     String folderPath = home + "\\Downloads\\Happy Inspector Reports";
-    
-    static IntInput intInput = new IntInput();
-    static ExtInput extInput = new ExtInput();
 
+    // objects for interior/exterior input/output
+    static IntInput intInput;
+    static ExtInput extInput;
     IntOutput intOutput;
     ExtOutput extOutput;
-    
+
     // variables for the filechooser
     JFileChooser fc = new JFileChooser();
     File file;
     static String path;
 
+    // some graphic variables
     String consoleText = "";
     String selectedUnitNum;
     String selectedBuildingName;
@@ -41,27 +51,64 @@ public class MainFrame extends javax.swing.JFrame {
      * Creates new form MainFrame
      */
     public MainFrame() {
+
+        // init the components
         initComponents();
-        
-        // add on the date to the folderpath
+
+        // format the current DateTime to the format right here \/
         DateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy HHmm");
         Date date = new Date();
+
+        // add on the date to the folderpath
         this.folderPath += "\\" + dateFormat.format(date);
-        
         new File(folderPath).mkdirs();
-        
+
+        // create the output objects with the new folderpath
         intOutput = new IntOutput(folderPath);
         extOutput = new ExtOutput(folderPath);
+
+        // create the input objects without the new folderpath
+        intInput = new IntInput();
+        extInput = new ExtInput();
+
+        // if debugToConsole is enabled, things don't go to the log file
+        if(!debugToConsole) {
+
+            // set console out/err output to text file logs folder
+            String logName = "log " + dateFormat.format(date);
+            PrintStream out = null;
+            try {
+                out = new PrintStream(new FileOutputStream("logs//" + logName + ".txt"));
+                System.setOut(out);
+                System.setErr(out);
+            } catch (FileNotFoundException ex) {
+                System.err.println(ex);
+            }
+
+            // set the error and log output
+            intInput.setOut(out);
+            extInput.setOut(out);
+            intOutput.setOut(out);
+            extOutput.setOut(out);
+        }
     }
 
+    /**
+     * Updates the text area on the frame by appending the new string to the end
+     * @param str, the string to append
+     */
     public void updateConsole(String str) {
         consoleText += str;
         console.setText(consoleText);
         console.update(console.getGraphics());
     }
 
+    /**
+     * Populates the ListModel for the units list from the units list from IntInput
+     * @return the ListModel to populate the JList
+     */
     public ListModel populateInteriorList() {
-       
+
         // create some lists
         HashMap<String, Unit> list = getUnits();
         DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -76,13 +123,20 @@ public class MainFrame extends javax.swing.JFrame {
         // return the listModel to populate the jList
         return listModel;
     }
-    
+
+    /**
+     * Resets the Interior JList
+     */
     public void clearInteriorList() {
         unitsList.setModel(new DefaultListModel<>());
     }
-    
+
+    /**
+     * Populates the ListModel for the buildings list from the units list from ExtInput
+     * @return the ListModel to populate the JList
+     */
     public ListModel populateExteriorList() {
-       
+
         // create some lists
         HashMap<String, Building> list = getBuildings();
         DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -97,24 +151,23 @@ public class MainFrame extends javax.swing.JFrame {
         // return the listModel to populate the jList
         return listModel;
     }
-    
-    public void clearExteriorList() {
-        unitsList.setModel(new DefaultListModel<>());
-    }
 
-    public static void setPath(String pathToSet) {
-        path = pathToSet;
+    /**
+     * Resets the Exterior JList
+     */
+    public void clearExteriorList() {
+        buildingsList.setModel(new DefaultListModel<>());
     }
 
     /**
-     * @return the units
+     * @return the units from IntInput
      */
     public HashMap<String, Unit> getUnits() {
         return intInput.getUnits();
     }
-    
+
     /**
-     * @return the units
+     * @return the buildings from ExtInput
      */
     public HashMap<String, Building> getBuildings() {
         return extInput.getBuildings();
@@ -169,10 +222,18 @@ public class MainFrame extends javax.swing.JFrame {
         resetMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
         helpMenu = new javax.swing.JMenu();
+        aboutMenuItem = new javax.swing.JMenuItem();
+        guideMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("HI-Parser");
+        setIconImage(Toolkit.getDefaultToolkit().getImage("img/icon.png"));
         setResizable(false);
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentShown(java.awt.event.ComponentEvent evt) {
+                formComponentShown(evt);
+            }
+        });
 
         console.setEditable(false);
         console.setColumns(20);
@@ -420,7 +481,7 @@ public class MainFrame extends javax.swing.JFrame {
         });
 
         ext_CILabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        ext_CILabel.setText("<html><div align=\"center\">Open Consolidated Interior</div></html>");
+        ext_CILabel.setText("<html><div align=\"center\">Open Consolidated Exterior</div></html>");
         ext_CILabel.setEnabled(false);
 
         ext_CELabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -521,6 +582,23 @@ public class MainFrame extends javax.swing.JFrame {
         menu.add(fileMenu);
 
         helpMenu.setText("Help");
+
+        aboutMenuItem.setText("About");
+        aboutMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                aboutMenuItemActionPerformed(evt);
+            }
+        });
+        helpMenu.add(aboutMenuItem);
+
+        guideMenuItem.setText("Open Guide");
+        guideMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                guideMenuItemActionPerformed(evt);
+            }
+        });
+        helpMenu.add(guideMenuItem);
+
         menu.add(helpMenu);
 
         setJMenuBar(menu);
@@ -531,13 +609,10 @@ public class MainFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jTabbedPane1)
-                        .addGap(37, 37, 37))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jScrollPane2)
-                        .addContainerGap())))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane2)
+                    .addComponent(jTabbedPane1))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -552,72 +627,25 @@ public class MainFrame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    /**
-     * What happens when the INTERIOR Consolidated Report button is pressed
-     * Takes the units and parses them through the IntOutput object and creates
-     * the Excel report
-     * @param evt 
-     */
-    private void int_ConsolidatedReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_ConsolidatedReportButtonActionPerformed
-
-        // update graphics
-        int_generateCheck.setIcon(new ImageIcon("img/ellipses.png"));
-        int_generateCheck.update(int_generateCheck.getGraphics());
-        updateConsole("[INTERIOR] Exporting data...");
-
-        // start exporting
-        intOutput.setUnits(intInput.getUnits());
-        intOutput.outputData();
-
-        // done, update graphics
-        int_generateCheck.setIcon(new ImageIcon("img/check.png"));
-        updateConsole("Done\n[INTERIOR] File created at: " + folderPath + "\\Interior\n");
-        int_openConsolidatedInteriorButton.setEnabled(true);
-        int_CILabel.setEnabled(true);
-    }//GEN-LAST:event_int_ConsolidatedReportButtonActionPerformed
-
-    /**
-     * What happens when an item in the list is selected
-     * Enables the button and stores the name of the unit
-     * @param evt 
-     */
-    private void unitsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_unitsListMouseClicked
-        selectedUnitNum = unitsList.getSelectedValue();
-        int_SingleReportButton.setEnabled(true);
-    }//GEN-LAST:event_unitsListMouseClicked
-
-    /**
-     * What happens when you click on the single report button
-     * Opens a modal that says not implemented yet
-     * @param evt 
-     */
-    private void int_SingleReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_SingleReportButtonActionPerformed
-        JOptionPane.showMessageDialog(this, "Single Unit generation for unit " + selectedUnitNum + "\nSingle report generation not implemented yet.", "Single Report Generation", JOptionPane.WARNING_MESSAGE);
-    }//GEN-LAST:event_int_SingleReportButtonActionPerformed
-
-    /**
-     * Exits the application
-     * @param evt 
-     */
-    private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
-        System.exit(0);
-    }//GEN-LAST:event_exitMenuItemActionPerformed
+    /**********************/
+    /****** INTERIOR ******/
+    /**********************/
 
     /**
      * What happens when you click on the interior upload button
      * Prompts for file input, then initializes the intInput object
-     * @param evt 
+     * @param evt
      */
     private void int_uploadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_uploadButtonActionPerformed
-        
+
         int_uploadCheck.setIcon(new ImageIcon("img/ellipses.png"));
         int_uploadCheck.update(int_uploadCheck.getGraphics());
         updateConsole("[INTERIOR] Selecting file...");
-        
+
         path = intInput.openWorkbook();
-        
+
         if (path != null) {
-            
+
             updateConsole("Done\n");
             int_uploadCheck.setIcon(new ImageIcon("img/check.png"));
 
@@ -643,28 +671,53 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_int_uploadButtonActionPerformed
 
     /**
+     * What happens when the INTERIOR Consolidated Report button is pressed
+     * Takes the units and parses them through the IntOutput object and creates
+     * the Excel report
+     * @param evt
+     */
+    private void int_ConsolidatedReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_ConsolidatedReportButtonActionPerformed
+
+        // update graphics
+        int_generateCheck.setIcon(new ImageIcon("img/ellipses.png"));
+        int_generateCheck.update(int_generateCheck.getGraphics());
+        updateConsole("[INTERIOR] Exporting data...");
+
+        // start exporting
+        intOutput.setUnits(intInput.getUnits());
+        intOutput.outputData();
+
+        // done, update graphics
+        int_generateCheck.setIcon(new ImageIcon("img/check.png"));
+        updateConsole("Done\n[INTERIOR] File created at: " + folderPath + "\\Interior\n");
+        int_openConsolidatedInteriorButton.setEnabled(true);
+        int_CILabel.setEnabled(true);
+    }//GEN-LAST:event_int_ConsolidatedReportButtonActionPerformed
+
+    /**
      * What happens when you click on the interior capex button
      * Parses through the units and outputs them to the spreadsheet
-     * @param evt 
+     * @param evt
      */
     private void int_CapexReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_CapexReportButtonActionPerformed
         // capEx
         int_capexCheck.setIcon(new ImageIcon("img/ellipses.png"));
         int_capexCheck.update(int_capexCheck.getGraphics());
         updateConsole("[INTERIOR] Creating CapEx report...");
-        
+
+        intOutput.setUnits(intInput.getUnits());
         intOutput.outputCapEx();
-        
+
         updateConsole("Done\n[INTERIOR] File created at: " + folderPath + "\\Interior\n");
         int_capexCheck.setIcon(new ImageIcon("img/check.png"));
-        
+
         int_openCapexReportButton.setEnabled(true);
         int_CELabel.setEnabled(true);
     }//GEN-LAST:event_int_CapexReportButtonActionPerformed
 
     /**
      * Opens the Internal Consolidated Interior spreadsheet with Excel
-     * @param evt 
+     * @param evt
      */
     private void int_openConsolidatedInteriorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_openConsolidatedInteriorButtonActionPerformed
         try {
@@ -676,7 +729,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     /**
      * Opens the Internal CapEx spreadsheet with Excel
-     * @param evt 
+     * @param evt
      */
     private void int_openCapexReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_openCapexReportButtonActionPerformed
         try {
@@ -687,38 +740,42 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_int_openCapexReportButtonActionPerformed
 
     /**
-     * Resets the form by closing it then reopening it
-     * @param evt 
+     * What happens when you click on the single report button
+     * Opens a modal that says not implemented yet
+     * @param evt
      */
-    private void resetMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetMenuItemActionPerformed
-        this.dispose();
-        main(null);
-    }//GEN-LAST:event_resetMenuItemActionPerformed
+    private void int_SingleReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_int_SingleReportButtonActionPerformed
+        JOptionPane.showMessageDialog(this, "Single Unit generation for unit " + selectedUnitNum + "\nSingle report generation not implemented yet.", "Single Report Generation", JOptionPane.WARNING_MESSAGE);
+    }//GEN-LAST:event_int_SingleReportButtonActionPerformed
 
     /**
      * What happens when an item in the list is selected
-     * Enables the button and stores the name of the building
-     * @param evt 
+     * Enables the button and stores the name of the unit
+     * @param evt
      */
-    private void buildingsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buildingsListMouseClicked
-        selectedBuildingName = buildingsList.getSelectedValue();
-        ext_SingleReportButton.setEnabled(true);
-    }//GEN-LAST:event_buildingsListMouseClicked
+    private void unitsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_unitsListMouseClicked
+        selectedUnitNum = unitsList.getSelectedValue();
+        int_SingleReportButton.setEnabled(true);
+    }//GEN-LAST:event_unitsListMouseClicked
+
+    /**********************/
+    /****** EXTERIOR ******/
+    /**********************/
 
     /**
      * What happens when you click on the exterior upload button
      * Prompts for file input, then initializes the extInput object
-     * @param evt 
+     * @param evt
      */
     private void ext_uploadButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_uploadButtonActionPerformed
         ext_uploadCheck.setIcon(new ImageIcon("img/ellipses.png"));
         ext_uploadCheck.update(int_uploadCheck.getGraphics());
         updateConsole("[EXTERIOR] Selecting file...");
-        
+
         path = extInput.openWorkbook();
-        
+
         if (path != null) {
-            
+
             updateConsole("Done\n");
             ext_uploadCheck.setIcon(new ImageIcon("img/check.png"));
 
@@ -746,10 +803,10 @@ public class MainFrame extends javax.swing.JFrame {
      * What happens when the EXTERIOR Consolidated Report button is pressed
      * Takes the buildings and parses them through the ExtOutput object and creates
      * the Excel report
-     * @param evt 
+     * @param evt
      */
     private void ext_ConsolidatedReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_ConsolidatedReportButtonActionPerformed
-        
+
         // update graphics
         ext_generateCheck.setIcon(new ImageIcon("img/ellipses.png"));
         ext_generateCheck.update(int_generateCheck.getGraphics());
@@ -769,35 +826,26 @@ public class MainFrame extends javax.swing.JFrame {
     /**
      * What happens when you click on the interior capex button
      * Parses through the units and outputs them to the spreadsheet
-     * @param evt 
+     * @param evt
      */
     private void ext_CapexReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_CapexReportButtonActionPerformed
         // capEx
         ext_capexCheck.setIcon(new ImageIcon("img/ellipses.png"));
         ext_capexCheck.update(ext_capexCheck.getGraphics());
         updateConsole("[EXTERIOR] Creating CapEx report...");
-        
+
         extOutput.outputCapEx();
-        
+
         updateConsole("Done\n[EXTERIOR] File created at: " + folderPath + "\\Exterior\n");
         ext_capexCheck.setIcon(new ImageIcon("img/check.png"));
-        
+
         ext_openCapexReportButton.setEnabled(true);
         ext_CELabel.setEnabled(true);
     }//GEN-LAST:event_ext_CapexReportButtonActionPerformed
 
     /**
-     * What happens when you click on the single report button
-     * Opens a modal that says not implemented yet
-     * @param evt 
-     */
-    private void ext_SingleReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_SingleReportButtonActionPerformed
-        JOptionPane.showMessageDialog(this, "Single Building generation for unit " + selectedBuildingName + "\nSingle report generation not implemented yet.", "Single Report Generation", JOptionPane.WARNING_MESSAGE);
-    }//GEN-LAST:event_ext_SingleReportButtonActionPerformed
-
-    /**
      * Opens the External Consolidated spreadsheet with Excel
-     * @param evt 
+     * @param evt
      */
     private void ext_openConsolidatedInteriorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_openConsolidatedInteriorButtonActionPerformed
         try {
@@ -809,7 +857,7 @@ public class MainFrame extends javax.swing.JFrame {
 
     /**
      * Opens the External CapEx spreadsheet with Excel
-     * @param evt 
+     * @param evt
      */
     private void ext_openCapexReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_openCapexReportButtonActionPerformed
         try {
@@ -820,13 +868,76 @@ public class MainFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_ext_openCapexReportButtonActionPerformed
 
     /**
+     * What happens when you click on the single report button
+     * Opens a modal that says not implemented yet
+     * @param evt
+     */
+    private void ext_SingleReportButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ext_SingleReportButtonActionPerformed
+        JOptionPane.showMessageDialog(this, "Single Building generation for unit " + selectedBuildingName + "\nSingle report generation not implemented yet.", "Single Report Generation", JOptionPane.WARNING_MESSAGE);
+    }//GEN-LAST:event_ext_SingleReportButtonActionPerformed
+
+    /**
+     * What happens when an item in the list is selected
+     * Enables the button and stores the name of the building
+     * @param evt
+     */
+    private void buildingsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_buildingsListMouseClicked
+        selectedBuildingName = buildingsList.getSelectedValue();
+        ext_SingleReportButton.setEnabled(true);
+    }//GEN-LAST:event_buildingsListMouseClicked
+
+    private void formComponentShown(java.awt.event.ComponentEvent evt) {//GEN-FIRST:event_formComponentShown
+        int_openCapexReportButton.setIcon(new ImageIcon("img/excel.png"));
+        int_openConsolidatedInteriorButton.setIcon(new ImageIcon("img/excel.png"));
+        ext_openCapexReportButton.setIcon(new ImageIcon("img/excel.png"));
+        ext_openConsolidatedInteriorButton.setIcon(new ImageIcon("img/excel.png"));
+    }//GEN-LAST:event_formComponentShown
+
+    /**
+     * Exits the application
+     * @param evt
+     */
+    private void exitMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuItemActionPerformed
+        System.exit(0);
+    }//GEN-LAST:event_exitMenuItemActionPerformed
+
+    /**
+     * Resets the form by closing it then reopening it
+     * @param evt
+     */
+    private void resetMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetMenuItemActionPerformed
+        this.dispose();
+        main(null);
+    }//GEN-LAST:event_resetMenuItemActionPerformed
+
+    /**
+     * Opens an About dialog
+     * @param evt 
+     */
+    private void aboutMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aboutMenuItemActionPerformed
+        JOptionPane.showMessageDialog(this, "Version: 1.0\n© Pat Ripley, 2017", "About HI-Parser", JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_aboutMenuItemActionPerformed
+
+    /**
+     * Opens the Due Diligence Procedure pdf at the Data Consolidation page
+     * @param evt 
+     */
+    private void guideMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_guideMenuItemActionPerformed
+        try {
+            Process p = Runtime.getRuntime().exec("C:\\Program Files (x86)\\Adobe\\Acrobat Reader DC\\Reader\\AcroRd32.exe /A \"page=12\" \"G:/IT - Public Folder/Happy Inspector/Due Diligence Procedure.pdf\"");
+        } catch (IOException ex) {
+            System.err.println(ex);
+        }
+    }//GEN-LAST:event_guideMenuItemActionPerformed
+
+    /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
 //        try {
 //            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -839,7 +950,7 @@ public class MainFrame extends javax.swing.JFrame {
 //            java.util.logging.Logger.getLogger(MainFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
 //        }
         //</editor-fold>
-        
+
         //</editor-fold>
 
         /* Create and display the form */
@@ -851,6 +962,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem aboutMenuItem;
     private javax.swing.JLabel buildingsLabel;
     private javax.swing.JList<String> buildingsList;
     private javax.swing.JScrollPane buildingsListSP;
@@ -870,6 +982,7 @@ public class MainFrame extends javax.swing.JFrame {
     private javax.swing.JLabel ext_uploadCheck;
     private javax.swing.JPanel exteriorPanel;
     private javax.swing.JMenu fileMenu;
+    private javax.swing.JMenuItem guideMenuItem;
     private javax.swing.JMenu helpMenu;
     private javax.swing.JLabel int_CELabel;
     private javax.swing.JLabel int_CILabel;

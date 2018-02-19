@@ -29,18 +29,7 @@ public class Bathroom {
     private int door_score;
     private String door_type;
     private String door_variety;
-    private String door_material;
     private String door_notes;
-    
-    private int windows_score;
-    private String windows_type;
-    private int windows_number;
-    private String windows_waterdamage;
-    private String windows_notes;
-    
-    private int blindsdrapes_score;
-    private String blindsdrapes_type;
-    private String blindsdrapes_notes;
     
     private int wallsceiling_score;
     private String wallsceiling_waterdamage;
@@ -59,10 +48,9 @@ public class Bathroom {
     private int mirror_score;
     private String mirror_notes;
     
-    private int sink_score;
-    private String sink_type;
-    private String sink_material;
-    private String sink_notes;
+    private int countertop_score;
+    private String countertop_material;
+    private String countertop_notes;
     
     private int commode_score;
     private String commode_notes;
@@ -71,6 +59,8 @@ public class Bathroom {
     private String tubshower_material;
     private String tubshower_type;
     private String tubshower_notes;
+    
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -175,48 +165,6 @@ public class Bathroom {
      */
     public void setDoor_notes(String door_notes) {
         this.door_notes = door_notes;
-    }
-
-    /**
-     * @return the windows_score
-     */
-    public int getWindows_score() {
-        return windows_score;
-    }
-
-    /**
-     * @param windows_score the windows_score to set
-     */
-    public void setWindows_score(int windows_score) {
-        this.windows_score = windows_score;
-    }
-
-    /**
-     * @return the windows_type
-     */
-    public String getWindows_type() {
-        return windows_type;
-    }
-
-    /**
-     * @param windows_type the windows_type to set
-     */
-    public void setWindows_type(String windows_type) {
-        this.windows_type = windows_type;
-    }
-
-    /**
-     * @return the windows_notes
-     */
-    public String getWindows_notes() {
-        return windows_notes;
-    }
-
-    /**
-     * @param windows_notes the windows_notes to set
-     */
-    public void setWindows_notes(String windows_notes) {
-        this.windows_notes = windows_notes;
     }
 
     /**
@@ -360,31 +308,31 @@ public class Bathroom {
     }
 
     /**
-     * @return the sink_score
+     * @return the countertop_score
      */
-    public int getSink_score() {
-        return sink_score;
+    public int getCountertop_score() {
+        return countertop_score;
     }
 
     /**
-     * @param sink_score the sink_score to set
+     * @param countertop_score the countertop_score to set
      */
-    public void setSink_score(int sink_score) {
-        this.sink_score = sink_score;
+    public void setCountertop_score(int countertop_score) {
+        this.countertop_score = countertop_score;
     }
 
     /**
-     * @return the sink_notes
+     * @return the countertop_notes
      */
-    public String getSink_notes() {
-        return sink_notes;
+    public String getCountertop_notes() {
+        return countertop_notes;
     }
 
     /**
-     * @param sink_notes the sink_notes to set
+     * @param countertop_notes the countertop_notes to set
      */
-    public void setSink_notes(String sink_notes) {
-        this.sink_notes = sink_notes;
+    public void setSink_notes(String countertop_notes) {
+        this.countertop_notes = countertop_notes;
     }
 
     /**
@@ -444,62 +392,6 @@ public class Bathroom {
     }
     
     /**
-     * @return the blindsdrapes_score
-     */
-    public int getBlindsdrapes_score() {
-        return blindsdrapes_score;
-    }
-
-    /**
-     * @param blindsdrapes_score the blindsdrapes_score to set
-     */
-    public void setBlindsdrapes_score(int blindsdrapes_score) {
-        this.blindsdrapes_score = blindsdrapes_score;
-    }
-
-    /**
-     * @return the blindsdrapes_type
-     */
-    public String getBlindsdrapes_type() {
-        return blindsdrapes_type;
-    }
-
-    /**
-     * @param blindsdrapes_type the blindsdrapes_type to set
-     */
-    public void setBlindsdrapes_type(String blindsdrapes_type) {
-        this.blindsdrapes_type = blindsdrapes_type;
-    }
-
-    /**
-     * @return the blindsdrapes_notes
-     */
-    public String getBlindsdrapes_notes() {
-        return blindsdrapes_notes;
-    }
-
-    /**
-     * @param blindsdrapes_notes the blindsdrapes_notes to set
-     */
-    public void setBlindsdrapes_notes(String blindsdrapes_notes) {
-        this.blindsdrapes_notes = blindsdrapes_notes;
-    }
-    
-    /**
-     * @return the sink_type
-     */
-    public String getSink_type() {
-        return sink_type;
-    }
-
-    /**
-     * @param sink_type the sink_type to set
-     */
-    public void setSink_type(String sink_type) {
-        this.sink_type = sink_type;
-    }
-
-    /**
      * @return the tubshower_type
      */
     public String getTubshower_type() {
@@ -511,20 +403,6 @@ public class Bathroom {
      */
     public void setTubshower_type(String tubshower_type) {
         this.tubshower_type = tubshower_type;
-    }
-
-    /**
-     * @return the door_material
-     */
-    public String getDoor_material() {
-        return door_material;
-    }
-
-    /**
-     * @param door_material the door_material to set
-     */
-    public void setDoor_material(String door_material) {
-        this.door_material = door_material;
     }
 
     /**
@@ -556,17 +434,17 @@ public class Bathroom {
     }
 
     /**
-     * @return the sink_material
+     * @return the countertop_material
      */
-    public String getSink_material() {
-        return sink_material;
+    public String getCountertop_material() {
+        return countertop_material;
     }
 
     /**
-     * @param sink_material the sink_material to set
+     * @param countertop_material the countertop_material to set
      */
-    public void setSink_material(String sink_material) {
-        this.sink_material = sink_material;
+    public void setCountertop_material(String countertop_material) {
+        this.countertop_material = countertop_material;
     }
 
     /**
@@ -612,34 +490,6 @@ public class Bathroom {
     }
 
     /**
-     * @return the windows_number
-     */
-    public int getWindows_number() {
-        return windows_number;
-    }
-
-    /**
-     * @param windows_number the windows_number to set
-     */
-    public void setWindows_number(int windows_number) {
-        this.windows_number = windows_number;
-    }
-
-    /**
-     * @return the windows_waterdamage
-     */
-    public String getWindows_waterdamage() {
-        return windows_waterdamage;
-    }
-
-    /**
-     * @param windows_waterdamage the windows_waterdamage to set
-     */
-    public void setWindows_waterdamage(String windows_waterdamage) {
-        this.windows_waterdamage = windows_waterdamage;
-    }
-
-    /**
      * @return the light_finish
      */
     public String getLight_finish() {
@@ -653,4 +503,17 @@ public class Bathroom {
         this.light_finish = light_finish;
     }
 
-}
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Bathroom.java

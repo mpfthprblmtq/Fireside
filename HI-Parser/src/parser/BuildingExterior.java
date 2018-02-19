@@ -123,6 +123,8 @@ public class BuildingExterior {
     private int exterioraccess_score;
     private String exterioraccess_notes;
     
+    private String unaccounted_items;
+    
     /**
      * @return the stairs_notes
      */
@@ -1137,7 +1139,18 @@ public class BuildingExterior {
     public void setDoors_material(String doors_material) {
         this.doors_material = doors_material;
     }
-    
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end BuildingExterior.java

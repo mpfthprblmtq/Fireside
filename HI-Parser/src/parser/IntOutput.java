@@ -23,18 +23,19 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import org.apache.poi.common.usermodel.HyperlinkType;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCreationHelper;
 import org.apache.poi.xssf.usermodel.XSSFFont;
-import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFHyperlink;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -70,8 +71,6 @@ public class IntOutput {
     String consolidatedOutputPath;
     String capexOutputPath;
     String imagesPath;
-    //String consolidatedOutputPath = folderPath + "\\Happy Inspector Reports\\Interior\\";
-    //String capexOutputPath = folderPath + "\\Happy Inspector Reports\\Interior\\";
 
     // globals
     boolean notePut = false;
@@ -81,13 +80,22 @@ public class IntOutput {
 
     /**
      * Default constructor
-     * @param folderPath
+     * @param folderPath, the path to send the files to
      */
     public IntOutput(String folderPath) {
         this.folderPath = folderPath + "\\Interior\\";
         this.consolidatedOutputPath = this.folderPath + "Consolidated Interior.xlsx";
         this.capexOutputPath = this.folderPath + "Interior CapEx Report.xlsx";
         this.imagesPath = this.folderPath + "\\Images";
+    }
+    
+    /**
+     * Set the err and out streams to the text file
+     * @param ps 
+     */
+    public void setOut(PrintStream ps) {
+        System.setErr(ps);
+        System.setOut(ps);
     }
 
     /**
@@ -105,14 +113,14 @@ public class IntOutput {
     }
     
     /**
-     * @return the units
+     * @return the Consolidated Interior spreadsheet
      */
     public File getConsolidatedFile() {
         return new File(consolidatedOutputPath);
     }
     
     /**
-     * @return the units
+     * @return the Interior CapEx spreadsheet
      */
     public File getCapExFile() {
         return new File(capexOutputPath);
@@ -137,6 +145,7 @@ public class IntOutput {
             System.err.println(e);
         }
         
+        // secondary functions to do the individual tasks
         outputScores();
         outputDetails();
         outputNotes();
@@ -148,25 +157,25 @@ public class IntOutput {
         } catch (IOException ex) {
             System.err.println(ex);
         }
+        
         // create the new directory
         File output = new File(folderPath);
         output.mkdirs();
+        
         // write all of this to the new file
         try (FileOutputStream outFile = new FileOutputStream(consolidatedOutputPath)) {
             wb.write(outFile);
+            
+        // thing(s) went wrong    
         } catch (FileNotFoundException ex) {
             System.err.println(ex);
         } catch (IOException ex) {
             System.err.println(ex);
         }
-        
-        
-        
-        // thing(s) went wrong
     } // end outputData()
     
     /**
-     * Function that controls the output of all the data
+     * Function that controls the output of all the capex data
      */
     public void outputCapEx() {
 
@@ -185,9 +194,7 @@ public class IntOutput {
             }
 
             // output the scores
-            //System.out.print("Outputting scores...");
             outputScoresForCapEx();
-            //System.out.println("Done");
 
             // close the sheet
             try {
@@ -195,37 +202,24 @@ public class IntOutput {
             } catch (IOException ex) {
                 System.err.println(ex);
             }
+            
+            // create the new directory
+            File output = new File(folderPath);
+            output.mkdirs();
 
             // write all of this to the new file
             try (FileOutputStream outFile = new FileOutputStream(capexOutputPath)) {
                 wb_ce.write(outFile);
             }
 
-            // thing(s) went wrong
+        // thing(s) went wrong
         } catch (FileNotFoundException ex) {
             System.err.println(ex);
         } catch (IOException ex) {
             System.err.println(ex);
-        } finally {
-
         }
-    } // end outputData()
-
-    /**
-     * Helper function used to recursively delete files in the images folder
-     * to avoid duplicates
-     * @param file
-     */
-    void deleteDir(File file) {
-        File[] contents = file.listFiles();
-        if (contents != null) {
-            for (File f : contents) {
-                deleteDir(f);
-            }
-        }
-        file.delete();
-    }
-
+    } // end outputCapEx()
+    
     /**
      * Outputs the scores to the Scores worksheet
      */
@@ -249,103 +243,113 @@ public class IntOutput {
             // This huge block of code basically uses getNum to put the scores
             // into the specified spots in the sheet
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
+            
             // entry
-            row.getCell(2).setCellValue(getNum(units.get(key).entry.getDoor_score()));
-            row.getCell(3).setCellValue(getNum(units.get(key).entry.getFloor_score()));
-            row.getCell(4).setCellValue(getNum(units.get(key).entry.getStairs_score()));
-            row.getCell(5).setCellValue(getNum(units.get(key).entry.getWallsceiling_score()));
-            row.getCell(6).setCellValue(getNum(units.get(key).entry.getCloset_score()));
-            row.getCell(7).setCellValue(getNum(units.get(key).entry.getWindows_score()));
-            row.getCell(8).setCellValue(getNum(units.get(key).entry.getBlindsdrapes_score()));
-            row.getCell(9).setCellValue(getNum(units.get(key).entry.getLight_score()));
+            row.getCell(2).setCellValue(units.get(key).entry.getDoor_score());
+            row.getCell(3).setCellValue(units.get(key).entry.getFloor_score());
+            row.getCell(4).setCellValue(units.get(key).entry.getStairs_score());
+            row.getCell(5).setCellValue(units.get(key).entry.getWallsceiling_score());
+            row.getCell(6).setCellValue(units.get(key).entry.getCloset_score());
+            row.getCell(7).setCellValue(units.get(key).entry.getWindows_score());
+            row.getCell(8).setCellValue(units.get(key).entry.getBlindsdrapes_score());
+            row.getCell(9).setCellValue(units.get(key).entry.getLight_score());
 
             // living room
-            row.getCell(10).setCellValue(getNum(units.get(key).livingroom.getFloor_score()));
-            row.getCell(11).setCellValue(getNum(units.get(key).livingroom.getWallsceiling_score()));
-            row.getCell(12).setCellValue(getNum(units.get(key).livingroom.getDoor_score()));
-            row.getCell(13).setCellValue(getNum(units.get(key).livingroom.getWindows_score()));
-            row.getCell(14).setCellValue(getNum(units.get(key).livingroom.getBlindsdrapes_score()));
-            row.getCell(15).setCellValue(getNum(units.get(key).livingroom.getLight_score()));
-            row.getCell(16).setCellValue(getNum(units.get(key).livingroom.getCeilingfan_score()));
-            row.getCell(17).setCellValue(getNum(units.get(key).livingroom.getPatio_score()));
-            row.getCell(18).setCellValue(getNum(units.get(key).livingroom.getFireplace_score()));
+            row.getCell(10).setCellValue(units.get(key).livingroom.getFloor_score());
+            row.getCell(11).setCellValue(units.get(key).livingroom.getWallsceiling_score());
+            row.getCell(12).setCellValue(units.get(key).livingroom.getDoor_score());
+            row.getCell(13).setCellValue(units.get(key).livingroom.getWindows_score());
+            row.getCell(14).setCellValue(units.get(key).livingroom.getBlindsdrapes_score());
+            row.getCell(15).setCellValue(units.get(key).livingroom.getLight_score());
+            row.getCell(16).setCellValue(units.get(key).livingroom.getPatio_score());
+            row.getCell(17).setCellValue(units.get(key).livingroom.getFireplace_score());
 
             // dining room
-            row.getCell(19).setCellValue(getNum(units.get(key).diningroom.getFloor_score()));
-            row.getCell(20).setCellValue(getNum(units.get(key).diningroom.getWallsceiling_score()));
-            row.getCell(21).setCellValue(getNum(units.get(key).diningroom.getDoor_score()));
-            row.getCell(22).setCellValue(getNum(units.get(key).diningroom.getCloset_score()));
-            row.getCell(23).setCellValue(getNum(units.get(key).diningroom.getWindows_score()));
-            row.getCell(24).setCellValue(getNum(units.get(key).diningroom.getBlindsdrapes_score()));
-            row.getCell(25).setCellValue(getNum(units.get(key).diningroom.getLight_score()));
-            row.getCell(26).setCellValue(getNum(units.get(key).diningroom.getCeilingfan_score()));
+            row.getCell(18).setCellValue(units.get(key).diningroom.getFloor_score());
+            row.getCell(19).setCellValue(units.get(key).diningroom.getWallsceiling_score());
+            row.getCell(20).setCellValue(units.get(key).diningroom.getDoor_score());
+            row.getCell(21).setCellValue(units.get(key).diningroom.getWindows_score());
+            row.getCell(22).setCellValue(units.get(key).diningroom.getBlindsdrapes_score());
+            row.getCell(23).setCellValue(units.get(key).diningroom.getLight_score());
 
             // kitchen
-            row.getCell(27).setCellValue(getNum(units.get(key).kitchen.getFloor_score()));
-            row.getCell(28).setCellValue(getNum(units.get(key).kitchen.getWallsceiling_score()));
-            row.getCell(29).setCellValue(getNum(units.get(key).kitchen.getWindows_score()));
-            row.getCell(30).setCellValue(getNum(units.get(key).kitchen.getBlindsdrapes_score()));
-            row.getCell(31).setCellValue(getNum(units.get(key).kitchen.getDoor_score()));
-            row.getCell(32).setCellValue(getNum(units.get(key).kitchen.getPantry_score()));
-            row.getCell(33).setCellValue(getNum(units.get(key).kitchen.getLight_score()));
-            row.getCell(34).setCellValue(getNum(units.get(key).kitchen.getSink_score()));
-            row.getCell(35).setCellValue(getNum(units.get(key).kitchen.getCabinets_score()));
-            row.getCell(36).setCellValue(getNum(units.get(key).kitchen.getCountertops_score()));
-            row.getCell(37).setCellValue(getNum(units.get(key).kitchen.getPassbar_score()));
+            row.getCell(24).setCellValue(units.get(key).kitchen.getFloor_score());
+            row.getCell(25).setCellValue(units.get(key).kitchen.getWallsceiling_score());
+            row.getCell(26).setCellValue(units.get(key).kitchen.getWindows_score());
+            row.getCell(27).setCellValue(units.get(key).kitchen.getBlindsdrapes_score());
+            row.getCell(28).setCellValue(units.get(key).kitchen.getDoor_score());
+            row.getCell(29).setCellValue(units.get(key).kitchen.getPantry_score());
+            row.getCell(30).setCellValue(units.get(key).kitchen.getLight_score());
+            row.getCell(31).setCellValue(units.get(key).kitchen.getSink_score());
+            row.getCell(32).setCellValue(units.get(key).kitchen.getCabinets_score());
+            row.getCell(33).setCellValue(units.get(key).kitchen.getCountertops_score());
+            row.getCell(34).setCellValue(units.get(key).kitchen.getPassbar_score());
 
             // mechanical
-            row.getCell(38).setCellValue(getNum(units.get(key).mechanical.getRange_score()));
-            row.getCell(39).setCellValue(getNum(units.get(key).mechanical.getFridge_score()));
-            row.getCell(40).setCellValue(getNum(units.get(key).mechanical.getDishwasher_score()));
-            row.getCell(41).setCellValue(getNum(units.get(key).mechanical.getMicrowave_score()));
-            row.getCell(42).setCellValue(getNum(units.get(key).mechanical.getHood_score()));
-            row.getCell(43).setCellValue(getNum(units.get(key).mechanical.getHvac_score()));
-            row.getCell(44).setCellValue(getNum(units.get(key).mechanical.getWater_heater_score()));
-            row.getCell(45).setCellValue(getNum(units.get(key).mechanical.getWasher_dryer_score()));
-            row.getCell(46).setCellValue(getNum(units.get(key).mechanical.getDisposal_score()));
+            row.getCell(35).setCellValue(units.get(key).mechanical.getRange_score());
+            row.getCell(36).setCellValue(units.get(key).mechanical.getFridge_score());
+            row.getCell(37).setCellValue(units.get(key).mechanical.getDishwasher_score());
+            row.getCell(38).setCellValue(units.get(key).mechanical.getHood_score());
+            row.getCell(39).setCellValue(units.get(key).mechanical.getHvac_score());
+            row.getCell(40).setCellValue(units.get(key).mechanical.getWater_heater_score());
+            row.getCell(41).setCellValue(units.get(key).mechanical.getWasher_dryer_score());
+            row.getCell(42).setCellValue(units.get(key).mechanical.getDisposal_score());
 
             // utility
-            row.getCell(47).setCellValue(getNum(units.get(key).utility.getDoor_score()));
-            row.getCell(48).setCellValue(getNum(units.get(key).utility.getFloor_score()));
-            row.getCell(49).setCellValue(getNum(units.get(key).utility.getWallsceiling_score()));
-            row.getCell(50).setCellValue(getNum(units.get(key).utility.getSump_score()));
-            row.getCell(51).setCellValue(getNum(units.get(key).utility.getLight_score()));
+            row.getCell(43).setCellValue(units.get(key).utility.getDoor_score());
+            row.getCell(44).setCellValue(units.get(key).utility.getFloor_score());
+            row.getCell(45).setCellValue(units.get(key).utility.getWallsceiling_score());
+            row.getCell(46).setCellValue(units.get(key).utility.getLight_score());
 
             // bedroom 1
-            row.getCell(52).setCellValue(getNum(units.get(key).bedroom1.getFloor_score()));
-            row.getCell(53).setCellValue(getNum(units.get(key).bedroom1.getWallsceiling_score()));
-            row.getCell(54).setCellValue(getNum(units.get(key).bedroom1.getDoor_score()));
-            row.getCell(55).setCellValue(getNum(units.get(key).bedroom1.getCloset_score()));
-            row.getCell(56).setCellValue(getNum(units.get(key).bedroom1.getWindows_score()));
-            row.getCell(57).setCellValue(getNum(units.get(key).bedroom1.getBlindsdrapes_score()));
-            row.getCell(58).setCellValue(getNum(units.get(key).bedroom1.getLight_score()));
-            row.getCell(59).setCellValue(getNum(units.get(key).bedroom1.getCeilingfan_score()));
+            row.getCell(47).setCellValue(units.get(key).bedroom1.getFloor_score());
+            row.getCell(48).setCellValue(units.get(key).bedroom1.getWallsceiling_score());
+            row.getCell(49).setCellValue(units.get(key).bedroom1.getDoor_score());
+            row.getCell(50).setCellValue(units.get(key).bedroom1.getCloset_score());
+            row.getCell(51).setCellValue(units.get(key).bedroom1.getWindows_score());
+            row.getCell(52).setCellValue(units.get(key).bedroom1.getBlindsdrapes_score());
+            row.getCell(53).setCellValue(units.get(key).bedroom1.getLight_score());
 
             // bathroom 1
-            row.getCell(76).setCellValue(getNum(units.get(key).bathroom1.getFloor_score()));
-            row.getCell(77).setCellValue(getNum(units.get(key).bathroom1.getWallsceiling_score()));
-            row.getCell(78).setCellValue(getNum(units.get(key).bathroom1.getDoor_score()));
-            row.getCell(79).setCellValue(getNum(units.get(key).bathroom1.getWindows_score()));
-            row.getCell(80).setCellValue(getNum(units.get(key).bathroom1.getBlindsdrapes_score()));
-            row.getCell(81).setCellValue(getNum(units.get(key).bathroom1.getLight_score()));
-            row.getCell(82).setCellValue(getNum(units.get(key).bathroom1.getSink_score()));
-            row.getCell(83).setCellValue(getNum(units.get(key).bathroom1.getTubshower_score()));
-            row.getCell(84).setCellValue(getNum(units.get(key).bathroom1.getCommode_score()));
-            row.getCell(85).setCellValue(getNum(units.get(key).bathroom1.getMedicinecabinet_score()));
-            row.getCell(86).setCellValue(getNum(units.get(key).bathroom1.getMirror_score()));
+            row.getCell(68).setCellValue(units.get(key).bathroom1.getFloor_score());
+            row.getCell(69).setCellValue(units.get(key).bathroom1.getWallsceiling_score());
+            row.getCell(70).setCellValue(units.get(key).bathroom1.getDoor_score());
+            row.getCell(71).setCellValue(units.get(key).bathroom1.getLight_score());
+            row.getCell(72).setCellValue(units.get(key).bathroom1.getCountertop_score());
+            row.getCell(73).setCellValue(units.get(key).bathroom1.getTubshower_score());
+            row.getCell(74).setCellValue(units.get(key).bathroom1.getCommode_score());
+            row.getCell(75).setCellValue(units.get(key).bathroom1.getMedicinecabinet_score());
+            row.getCell(76).setCellValue(units.get(key).bathroom1.getMirror_score());
 
             // bedroom 2 (try to add it, if it doesn't exist, fill it with blank slots)
             try {
-                row.getCell(60).setCellValue(getNum(units.get(key).bedroom2.getFloor_score()));
-                row.getCell(61).setCellValue(getNum(units.get(key).bedroom2.getWallsceiling_score()));
-                row.getCell(62).setCellValue(getNum(units.get(key).bedroom2.getDoor_score()));
-                row.getCell(63).setCellValue(getNum(units.get(key).bedroom2.getCloset_score()));
-                row.getCell(64).setCellValue(getNum(units.get(key).bedroom2.getWindows_score()));
-                row.getCell(65).setCellValue(getNum(units.get(key).bedroom2.getBlindsdrapes_score()));
-                row.getCell(66).setCellValue(getNum(units.get(key).bedroom2.getLight_score()));
-                row.getCell(67).setCellValue(getNum(units.get(key).bedroom2.getCeilingfan_score()));
+                row.getCell(54).setCellValue(units.get(key).bedroom2.getFloor_score());
+                row.getCell(55).setCellValue(units.get(key).bedroom2.getWallsceiling_score());
+                row.getCell(56).setCellValue(units.get(key).bedroom2.getDoor_score());
+                row.getCell(57).setCellValue(units.get(key).bedroom2.getCloset_score());
+                row.getCell(58).setCellValue(units.get(key).bedroom2.getWindows_score());
+                row.getCell(59).setCellValue(units.get(key).bedroom2.getBlindsdrapes_score());
+                row.getCell(60).setCellValue(units.get(key).bedroom2.getLight_score());
             } catch (NullPointerException e) {
+                row.getCell(54).setCellValue("");
+                row.getCell(55).setCellValue("");
+                row.getCell(56).setCellValue("");
+                row.getCell(57).setCellValue("");
+                row.getCell(58).setCellValue("");
+                row.getCell(59).setCellValue("");
                 row.getCell(60).setCellValue("");
+            }
+
+            // bedroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
+            try {
+                row.getCell(61).setCellValue(units.get(key).bedroom3.getFloor_score());
+                row.getCell(62).setCellValue(units.get(key).bedroom3.getWallsceiling_score());
+                row.getCell(63).setCellValue(units.get(key).bedroom3.getDoor_score());
+                row.getCell(64).setCellValue(units.get(key).bedroom3.getCloset_score());
+                row.getCell(65).setCellValue(units.get(key).bedroom3.getWindows_score());
+                row.getCell(66).setCellValue(units.get(key).bedroom3.getBlindsdrapes_score());
+                row.getCell(67).setCellValue(units.get(key).bedroom3.getLight_score());
+            } catch (NullPointerException e) {
                 row.getCell(61).setCellValue("");
                 row.getCell(62).setCellValue("");
                 row.getCell(63).setCellValue("");
@@ -355,41 +359,42 @@ public class IntOutput {
                 row.getCell(67).setCellValue("");
             }
 
-            // bedroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
-            try {
-                row.getCell(68).setCellValue(getNum(units.get(key).bedroom3.getFloor_score()));
-                row.getCell(69).setCellValue(getNum(units.get(key).bedroom3.getWallsceiling_score()));
-                row.getCell(70).setCellValue(getNum(units.get(key).bedroom3.getDoor_score()));
-                row.getCell(71).setCellValue(getNum(units.get(key).bedroom3.getCloset_score()));
-                row.getCell(72).setCellValue(getNum(units.get(key).bedroom3.getWindows_score()));
-                row.getCell(73).setCellValue(getNum(units.get(key).bedroom3.getBlindsdrapes_score()));
-                row.getCell(74).setCellValue(getNum(units.get(key).bedroom3.getLight_score()));
-                row.getCell(75).setCellValue(getNum(units.get(key).bedroom3.getCeilingfan_score()));
-            } catch (NullPointerException e) {
-                row.getCell(68).setCellValue("");
-                row.getCell(69).setCellValue("");
-                row.getCell(70).setCellValue("");
-                row.getCell(71).setCellValue("");
-                row.getCell(72).setCellValue("");
-                row.getCell(73).setCellValue("");
-                row.getCell(74).setCellValue("");
-                row.getCell(75).setCellValue("");
-            }
-
             // bathroom 2 (try to add it, if it doesn't exist, fill it with blank slots)
             try {
-                row.getCell(87).setCellValue(getNum(units.get(key).bathroom2.getFloor_score()));
-                row.getCell(88).setCellValue(getNum(units.get(key).bathroom2.getWallsceiling_score()));
-                row.getCell(89).setCellValue(getNum(units.get(key).bathroom2.getDoor_score()));
-                row.getCell(90).setCellValue(getNum(units.get(key).bathroom2.getWindows_score()));
-                row.getCell(91).setCellValue(getNum(units.get(key).bathroom2.getBlindsdrapes_score()));
-                row.getCell(92).setCellValue(getNum(units.get(key).bathroom2.getLight_score()));
-                row.getCell(93).setCellValue(getNum(units.get(key).bathroom2.getSink_score()));
-                row.getCell(94).setCellValue(getNum(units.get(key).bathroom2.getTubshower_score()));
-                row.getCell(95).setCellValue(getNum(units.get(key).bathroom2.getCommode_score()));
-                row.getCell(96).setCellValue(getNum(units.get(key).bathroom2.getMedicinecabinet_score()));
-                row.getCell(97).setCellValue(getNum(units.get(key).bathroom2.getMirror_score()));
+                row.getCell(77).setCellValue(units.get(key).bathroom2.getFloor_score());
+                row.getCell(78).setCellValue(units.get(key).bathroom2.getWallsceiling_score());
+                row.getCell(79).setCellValue(units.get(key).bathroom2.getDoor_score());
+                row.getCell(80).setCellValue(units.get(key).bathroom2.getLight_score());
+                row.getCell(81).setCellValue(units.get(key).bathroom2.getCountertop_score());
+                row.getCell(82).setCellValue(units.get(key).bathroom2.getTubshower_score());
+                row.getCell(83).setCellValue(units.get(key).bathroom2.getCommode_score());
+                row.getCell(84).setCellValue(units.get(key).bathroom2.getMedicinecabinet_score());
+                row.getCell(85).setCellValue(units.get(key).bathroom2.getMirror_score());
             } catch (NullPointerException e) {
+                row.getCell(77).setCellValue("");
+                row.getCell(78).setCellValue("");
+                row.getCell(79).setCellValue("");
+                row.getCell(80).setCellValue("");
+                row.getCell(81).setCellValue("");
+                row.getCell(82).setCellValue("");
+                row.getCell(83).setCellValue("");
+                row.getCell(84).setCellValue("");
+                row.getCell(85).setCellValue("");
+            }
+
+            // bathroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
+            try {
+                row.getCell(86).setCellValue(units.get(key).bathroom3.getFloor_score());
+                row.getCell(87).setCellValue(units.get(key).bathroom3.getWallsceiling_score());
+                row.getCell(88).setCellValue(units.get(key).bathroom3.getDoor_score());
+                row.getCell(89).setCellValue(units.get(key).bathroom3.getLight_score());
+                row.getCell(90).setCellValue(units.get(key).bathroom3.getCountertop_score());
+                row.getCell(91).setCellValue(units.get(key).bathroom3.getTubshower_score());
+                row.getCell(92).setCellValue(units.get(key).bathroom3.getCommode_score());
+                row.getCell(93).setCellValue(units.get(key).bathroom3.getMedicinecabinet_score());
+                row.getCell(94).setCellValue(units.get(key).bathroom3.getMirror_score());
+            } catch (NullPointerException e) {
+                row.getCell(86).setCellValue("");
                 row.getCell(87).setCellValue("");
                 row.getCell(88).setCellValue("");
                 row.getCell(89).setCellValue("");
@@ -398,110 +403,81 @@ public class IntOutput {
                 row.getCell(92).setCellValue("");
                 row.getCell(93).setCellValue("");
                 row.getCell(94).setCellValue("");
-                row.getCell(95).setCellValue("");
-                row.getCell(96).setCellValue("");
-                row.getCell(97).setCellValue("");
-            }
-
-            // bathroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
-            try {
-                row.getCell(98).setCellValue(getNum(units.get(key).bathroom3.getFloor_score()));
-                row.getCell(99).setCellValue(getNum(units.get(key).bathroom3.getWallsceiling_score()));
-                row.getCell(100).setCellValue(getNum(units.get(key).bathroom3.getDoor_score()));
-                row.getCell(101).setCellValue(getNum(units.get(key).bathroom3.getWindows_score()));
-                row.getCell(102).setCellValue(getNum(units.get(key).bathroom3.getBlindsdrapes_score()));
-                row.getCell(103).setCellValue(getNum(units.get(key).bathroom3.getLight_score()));
-                row.getCell(104).setCellValue(getNum(units.get(key).bathroom3.getSink_score()));
-                row.getCell(105).setCellValue(getNum(units.get(key).bathroom3.getTubshower_score()));
-                row.getCell(106).setCellValue(getNum(units.get(key).bathroom3.getCommode_score()));
-                row.getCell(107).setCellValue(getNum(units.get(key).bathroom3.getMedicinecabinet_score()));
-                row.getCell(108).setCellValue(getNum(units.get(key).bathroom3.getMirror_score()));
-            } catch (NullPointerException e) {
-                row.getCell(98).setCellValue("");
-                row.getCell(99).setCellValue("");
-                row.getCell(100).setCellValue("");
-                row.getCell(101).setCellValue("");
-                row.getCell(102).setCellValue("");
-                row.getCell(103).setCellValue("");
-                row.getCell(104).setCellValue("");
-                row.getCell(105).setCellValue("");
-                row.getCell(106).setCellValue("");
-                row.getCell(107).setCellValue("");
-                row.getCell(108).setCellValue("");
             }
 
             // occupied
             if(units.get(key).overall.getOccupancy() != null) {
                 if (units.get(key).overall.getOccupancy().equals("Occupied")) {
-                    row.getCell(109).setCellValue("X");
+                    row.getCell(95).setCellValue("X");
                 } else {
-                    row.getCell(109).setCellValue("");
+                    row.getCell(95).setCellValue("");
                 }
             
 
                 // vacant
                 if (units.get(key).overall.getOccupancy().equals("Vacant")) {
-                    row.getCell(110).setCellValue("X");
+                    row.getCell(96).setCellValue("X");
                 } else {
-                    row.getCell(110).setCellValue("");
+                    row.getCell(96).setCellValue("");
                 }
             }
 
             // cleanliness
-            row.getCell(111).setCellValue(units.get(key).overall.getCleanlinesss_score());
+            row.getCell(97).setCellValue(units.get(key).overall.getCleanlinesss_score());
 
             // furnishings
-            row.getCell(112).setCellValue(units.get(key).overall.getFurnishings_score());
+            row.getCell(98).setCellValue(units.get(key).overall.getFurnishings_score());
 
             // dog
             if (units.get(key).overall.isPets_dog()) {
-                row.getCell(113).setCellValue("X");
+                row.getCell(99).setCellValue("X");
             } else {
-                row.getCell(113).setCellValue("");
+                row.getCell(99).setCellValue("");
             }
 
             // cat
             if (units.get(key).overall.isPets_cat()) {
-                row.getCell(114).setCellValue("X");
+                row.getCell(100).setCellValue("X");
             } else {
-                row.getCell(114).setCellValue("");
+                row.getCell(100).setCellValue("");
             }
 
             // other
             if (units.get(key).overall.isPets_other()) {
-                row.getCell(115).setCellValue("X");
+                row.getCell(101).setCellValue("X");
             } else {
-                row.getCell(115).setCellValue("");
+                row.getCell(101).setCellValue("");
             }
 
             // number of pets
-            row.getCell(116).setCellValue(units.get(key).overall.getPets_number());
+            row.getCell(102).setCellValue(units.get(key).overall.getPets_number());
 
             // smoker
             if (units.get(key).overall.isSmoker()) {
-                row.getCell(117).setCellValue("X");
+                row.getCell(103).setCellValue("X");
             } else {
-                row.getCell(117).setCellValue("");
+                row.getCell(103).setCellValue("");
             }
 
             // hoarder
             if (units.get(key).overall.isHoarder()) {
-                row.getCell(118).setCellValue("X");
+                row.getCell(104).setCellValue("X");
             } else {
-                row.getCell(118).setCellValue("");
+                row.getCell(104).setCellValue("");
             }
 
             // smoke detectors
             if (units.get(key).overall.isHasSmokeDetectors()) {
-                row.getCell(119).setCellValue("X");
+                row.getCell(105).setCellValue("X");
             } else {
-                row.getCell(119).setCellValue("");
+                row.getCell(105).setCellValue("");
             }
 
             // letter grade
-            row.getCell(120).setCellValue(units.get(key).overall.getLetter_grade());
+            row.getCell(106).setCellValue(units.get(key).overall.getLetter_grade());
 
             // </editor-fold>
+            
             // update global
             r++;
         }
@@ -529,113 +505,123 @@ public class IntOutput {
 
             // This huge block of code basically uses getNum to put the scores
             // into the specified spots in the sheet
+            
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
             
             // entry
-            row_ce.getCell(2).setCellValue((units.get(key).entry.getDoor_score()));
-            row_ce.getCell(3).setCellValue((units.get(key).entry.getFloor_score()));
-            row_ce.getCell(4).setCellValue((units.get(key).entry.getStairs_score()));
-            row_ce.getCell(5).setCellValue((units.get(key).entry.getWallsceiling_score()));
-            row_ce.getCell(6).setCellValue((units.get(key).entry.getCloset_score()));
-            row_ce.getCell(7).setCellValue((units.get(key).entry.getWindows_score()));
+            row_ce.getCell(2).setCellValue(units.get(key).entry.getDoor_score());
+            row_ce.getCell(3).setCellValue(units.get(key).entry.getFloor_score());
+            row_ce.getCell(4).setCellValue(units.get(key).entry.getStairs_score());
+            row_ce.getCell(5).setCellValue(units.get(key).entry.getWallsceiling_score());
+            row_ce.getCell(6).setCellValue(units.get(key).entry.getCloset_score());
+            row_ce.getCell(7).setCellValue(units.get(key).entry.getWindows_score());
             row_ce.getCell(8).setCellValue(units.get(key).entry.getWindows_number());
-            row_ce.getCell(9).setCellValue((units.get(key).entry.getBlindsdrapes_score()));
-            row_ce.getCell(10).setCellValue((units.get(key).entry.getLight_score()));
+            row_ce.getCell(9).setCellValue(units.get(key).entry.getBlindsdrapes_score());
+            row_ce.getCell(10).setCellValue(units.get(key).entry.getLight_score());
 
             // living room
-            row_ce.getCell(11).setCellValue(getNum(units.get(key).livingroom.getFloor_score()));
-            row_ce.getCell(12).setCellValue(getNum(units.get(key).livingroom.getWallsceiling_score()));
-            row_ce.getCell(13).setCellValue(getNum(units.get(key).livingroom.getDoor_score()));
-            row_ce.getCell(14).setCellValue(getNum(units.get(key).livingroom.getWindows_score()));
+            row_ce.getCell(11).setCellValue(units.get(key).livingroom.getFloor_score());
+            row_ce.getCell(12).setCellValue(units.get(key).livingroom.getWallsceiling_score());
+            row_ce.getCell(13).setCellValue(units.get(key).livingroom.getDoor_score());
+            row_ce.getCell(14).setCellValue(units.get(key).livingroom.getWindows_score());
             row_ce.getCell(15).setCellValue(units.get(key).livingroom.getWindows_number());
-            row_ce.getCell(16).setCellValue(getNum(units.get(key).livingroom.getBlindsdrapes_score()));
-            row_ce.getCell(17).setCellValue(getNum(units.get(key).livingroom.getLight_score()));
-            row_ce.getCell(18).setCellValue(getNum(units.get(key).livingroom.getCeilingfan_score()));
-            row_ce.getCell(19).setCellValue(getNum(units.get(key).livingroom.getPatio_score()));
-            row_ce.getCell(20).setCellValue(getNum(units.get(key).livingroom.getFireplace_score()));
+            row_ce.getCell(16).setCellValue(units.get(key).livingroom.getBlindsdrapes_score());
+            row_ce.getCell(17).setCellValue(units.get(key).livingroom.getLight_score());
+            row_ce.getCell(18).setCellValue(units.get(key).livingroom.getPatio_score());
+            row_ce.getCell(19).setCellValue(units.get(key).livingroom.getFireplace_score());
 
             // dining room
-            row_ce.getCell(21).setCellValue(getNum(units.get(key).diningroom.getFloor_score()));
-            row_ce.getCell(22).setCellValue(getNum(units.get(key).diningroom.getWallsceiling_score()));
-            row_ce.getCell(23).setCellValue(getNum(units.get(key).diningroom.getDoor_score()));
-            row_ce.getCell(24).setCellValue(getNum(units.get(key).diningroom.getCloset_score()));
-            row_ce.getCell(25).setCellValue(getNum(units.get(key).diningroom.getWindows_score()));
-            row_ce.getCell(26).setCellValue(units.get(key).diningroom.getWindows_number());
-            row_ce.getCell(27).setCellValue(getNum(units.get(key).diningroom.getBlindsdrapes_score()));
-            row_ce.getCell(28).setCellValue(getNum(units.get(key).diningroom.getLight_score()));
-            row_ce.getCell(29).setCellValue(getNum(units.get(key).diningroom.getCeilingfan_score()));
+            row_ce.getCell(20).setCellValue(units.get(key).diningroom.getFloor_score());
+            row_ce.getCell(21).setCellValue(units.get(key).diningroom.getWallsceiling_score());
+            row_ce.getCell(22).setCellValue(units.get(key).diningroom.getDoor_score());
+            row_ce.getCell(23).setCellValue(units.get(key).diningroom.getWindows_score());
+            row_ce.getCell(24).setCellValue(units.get(key).diningroom.getWindows_number());
+            row_ce.getCell(25).setCellValue(units.get(key).diningroom.getBlindsdrapes_score());
+            row_ce.getCell(26).setCellValue(units.get(key).diningroom.getLight_score());
 
             // kitchen
-            row_ce.getCell(30).setCellValue(getNum(units.get(key).kitchen.getFloor_score()));
-            row_ce.getCell(31).setCellValue(getNum(units.get(key).kitchen.getWallsceiling_score()));
-            row_ce.getCell(32).setCellValue(getNum(units.get(key).kitchen.getWindows_score()));
-            row_ce.getCell(33).setCellValue(units.get(key).kitchen.getWindows_number());
-            row_ce.getCell(34).setCellValue(getNum(units.get(key).kitchen.getBlindsdrapes_score()));
-            row_ce.getCell(35).setCellValue(getNum(units.get(key).kitchen.getDoor_score()));
-            row_ce.getCell(36).setCellValue(getNum(units.get(key).kitchen.getPantry_score()));
-            row_ce.getCell(37).setCellValue(getNum(units.get(key).kitchen.getLight_score()));
-            row_ce.getCell(38).setCellValue(getNum(units.get(key).kitchen.getSink_score()));
-            row_ce.getCell(39).setCellValue(getNum(units.get(key).kitchen.getCabinets_score()));
-            row_ce.getCell(40).setCellValue(getNum(units.get(key).kitchen.getCountertops_score()));
-            row_ce.getCell(41).setCellValue(getNum(units.get(key).kitchen.getPassbar_score()));
+            row_ce.getCell(27).setCellValue(units.get(key).kitchen.getFloor_score());
+            row_ce.getCell(28).setCellValue(units.get(key).kitchen.getWallsceiling_score());
+            row_ce.getCell(29).setCellValue(units.get(key).kitchen.getWindows_score());
+            row_ce.getCell(30).setCellValue(units.get(key).kitchen.getWindows_number());
+            row_ce.getCell(31).setCellValue(units.get(key).kitchen.getBlindsdrapes_score());
+            row_ce.getCell(32).setCellValue(units.get(key).kitchen.getDoor_score());
+            row_ce.getCell(33).setCellValue(units.get(key).kitchen.getPantry_score());
+            row_ce.getCell(34).setCellValue(units.get(key).kitchen.getLight_score());
+            row_ce.getCell(35).setCellValue(units.get(key).kitchen.getSink_score());
+            row_ce.getCell(36).setCellValue(units.get(key).kitchen.getCabinets_score());
+            row_ce.getCell(37).setCellValue(units.get(key).kitchen.getCountertops_score());
+            row_ce.getCell(38).setCellValue(units.get(key).kitchen.getPassbar_score());
 
             // mechanical
-            row_ce.getCell(42).setCellValue(getNum(units.get(key).mechanical.getRange_score()));
-            row_ce.getCell(43).setCellValue(getNum(units.get(key).mechanical.getFridge_score()));
-            row_ce.getCell(44).setCellValue(getNum(units.get(key).mechanical.getDishwasher_score()));
-            row_ce.getCell(45).setCellValue(getNum(units.get(key).mechanical.getMicrowave_score()));
-            row_ce.getCell(46).setCellValue(getNum(units.get(key).mechanical.getHood_score()));
-            row_ce.getCell(47).setCellValue(getNum(units.get(key).mechanical.getHvac_score()));
-            row_ce.getCell(48).setCellValue(getNum(units.get(key).mechanical.getWater_heater_score()));
-            row_ce.getCell(49).setCellValue(getNum(units.get(key).mechanical.getWasher_dryer_score()));
-            row_ce.getCell(50).setCellValue(getNum(units.get(key).mechanical.getDisposal_score()));
+            row_ce.getCell(39).setCellValue(units.get(key).mechanical.getRange_score());
+            row_ce.getCell(40).setCellValue(units.get(key).mechanical.getFridge_score());
+            row_ce.getCell(41).setCellValue(units.get(key).mechanical.getDishwasher_score());
+            row_ce.getCell(42).setCellValue(units.get(key).mechanical.getHood_score());
+            row_ce.getCell(43).setCellValue(units.get(key).mechanical.getHvac_score());
+            row_ce.getCell(44).setCellValue(units.get(key).mechanical.getWater_heater_score());
+            row_ce.getCell(45).setCellValue(units.get(key).mechanical.getWasher_dryer_score());
+            row_ce.getCell(46).setCellValue(units.get(key).mechanical.getDisposal_score());
 
             // utility
-            row_ce.getCell(51).setCellValue(getNum(units.get(key).utility.getDoor_score()));
-            row_ce.getCell(52).setCellValue(getNum(units.get(key).utility.getFloor_score()));
-            row_ce.getCell(53).setCellValue(getNum(units.get(key).utility.getWallsceiling_score()));
-            row_ce.getCell(54).setCellValue(getNum(units.get(key).utility.getSump_score()));
-            row_ce.getCell(55).setCellValue(getNum(units.get(key).utility.getLight_score()));
+            row_ce.getCell(47).setCellValue(units.get(key).utility.getDoor_score());
+            row_ce.getCell(48).setCellValue(units.get(key).utility.getFloor_score());
+            row_ce.getCell(49).setCellValue(units.get(key).utility.getWallsceiling_score());
+            row_ce.getCell(50).setCellValue(units.get(key).utility.getLight_score());
 
             // bedroom 1
-            row_ce.getCell(56).setCellValue(getNum(units.get(key).bedroom1.getFloor_score()));
-            row_ce.getCell(57).setCellValue(getNum(units.get(key).bedroom1.getWallsceiling_score()));
-            row_ce.getCell(58).setCellValue(getNum(units.get(key).bedroom1.getDoor_score()));
-            row_ce.getCell(59).setCellValue(getNum(units.get(key).bedroom1.getCloset_score()));
-            row_ce.getCell(60).setCellValue(getNum(units.get(key).bedroom1.getWindows_score()));
-            row_ce.getCell(61).setCellValue(units.get(key).bedroom1.getWindows_number());
-            row_ce.getCell(62).setCellValue(getNum(units.get(key).bedroom1.getBlindsdrapes_score()));
-            row_ce.getCell(63).setCellValue(getNum(units.get(key).bedroom1.getLight_score()));
-            row_ce.getCell(64).setCellValue(getNum(units.get(key).bedroom1.getCeilingfan_score()));
+            row_ce.getCell(51).setCellValue(units.get(key).bedroom1.getFloor_score());
+            row_ce.getCell(52).setCellValue(units.get(key).bedroom1.getWallsceiling_score());
+            row_ce.getCell(53).setCellValue(units.get(key).bedroom1.getDoor_score());
+            row_ce.getCell(54).setCellValue(units.get(key).bedroom1.getCloset_score());
+            row_ce.getCell(55).setCellValue(units.get(key).bedroom1.getWindows_score());
+            row_ce.getCell(56).setCellValue(units.get(key).bedroom1.getWindows_number());
+            row_ce.getCell(57).setCellValue(units.get(key).bedroom1.getBlindsdrapes_score());
+            row_ce.getCell(58).setCellValue(units.get(key).bedroom1.getLight_score());
 
             // bathroom 1
-            row_ce.getCell(83).setCellValue(getNum(units.get(key).bathroom1.getFloor_score()));
-            row_ce.getCell(84).setCellValue(getNum(units.get(key).bathroom1.getWallsceiling_score()));
-            row_ce.getCell(85).setCellValue(getNum(units.get(key).bathroom1.getDoor_score()));
-            row_ce.getCell(86).setCellValue(getNum(units.get(key).bathroom1.getWindows_score()));
-            row_ce.getCell(87).setCellValue(units.get(key).bathroom1.getWindows_number());
-            row_ce.getCell(88).setCellValue(getNum(units.get(key).bathroom1.getBlindsdrapes_score()));
-            row_ce.getCell(89).setCellValue(getNum(units.get(key).bathroom1.getLight_score()));
-            row_ce.getCell(90).setCellValue(getNum(units.get(key).bathroom1.getSink_score()));
-            row_ce.getCell(91).setCellValue(getNum(units.get(key).bathroom1.getTubshower_score()));
-            row_ce.getCell(92).setCellValue(getNum(units.get(key).bathroom1.getCommode_score()));
-            row_ce.getCell(93).setCellValue(getNum(units.get(key).bathroom1.getMedicinecabinet_score()));
-            row_ce.getCell(94).setCellValue(getNum(units.get(key).bathroom1.getMirror_score()));
+            row_ce.getCell(75).setCellValue(units.get(key).bathroom1.getFloor_score());
+            row_ce.getCell(76).setCellValue(units.get(key).bathroom1.getWallsceiling_score());
+            row_ce.getCell(77).setCellValue(units.get(key).bathroom1.getDoor_score());
+            row_ce.getCell(78).setCellValue(units.get(key).bathroom1.getLight_score());
+            row_ce.getCell(79).setCellValue(units.get(key).bathroom1.getCountertop_score());
+            row_ce.getCell(80).setCellValue(units.get(key).bathroom1.getTubshower_score());
+            row_ce.getCell(81).setCellValue(units.get(key).bathroom1.getCommode_score());
+            row_ce.getCell(82).setCellValue(units.get(key).bathroom1.getMedicinecabinet_score());
+            row_ce.getCell(83).setCellValue(units.get(key).bathroom1.getMirror_score());
 
             // bedroom 2 (try to add it, if it doesn't exist, fill it with blank slots)
             try {
-                row_ce.getCell(65).setCellValue(getNum(units.get(key).bedroom2.getFloor_score()));
-                row_ce.getCell(66).setCellValue(getNum(units.get(key).bedroom2.getWallsceiling_score()));
-                row_ce.getCell(67).setCellValue(getNum(units.get(key).bedroom2.getDoor_score()));
-                row_ce.getCell(68).setCellValue(getNum(units.get(key).bedroom2.getCloset_score()));
-                row_ce.getCell(69).setCellValue(getNum(units.get(key).bedroom2.getWindows_score()));
-                row_ce.getCell(70).setCellValue(units.get(key).bedroom2.getWindows_number());
-                row_ce.getCell(71).setCellValue(getNum(units.get(key).bedroom2.getBlindsdrapes_score()));
-                row_ce.getCell(72).setCellValue(getNum(units.get(key).bedroom2.getLight_score()));
-                row_ce.getCell(73).setCellValue(getNum(units.get(key).bedroom2.getCeilingfan_score()));
+                row_ce.getCell(59).setCellValue(units.get(key).bedroom2.getFloor_score());
+                row_ce.getCell(60).setCellValue(units.get(key).bedroom2.getWallsceiling_score());
+                row_ce.getCell(61).setCellValue(units.get(key).bedroom2.getDoor_score());
+                row_ce.getCell(62).setCellValue(units.get(key).bedroom2.getCloset_score());
+                row_ce.getCell(63).setCellValue(units.get(key).bedroom2.getWindows_score());
+                row_ce.getCell(64).setCellValue(units.get(key).bedroom2.getWindows_number());
+                row_ce.getCell(65).setCellValue(units.get(key).bedroom2.getBlindsdrapes_score());
+                row_ce.getCell(66).setCellValue(units.get(key).bedroom2.getLight_score());
             } catch (NullPointerException e) {
+                row_ce.getCell(59).setCellValue("");
+                row_ce.getCell(60).setCellValue("");
+                row_ce.getCell(61).setCellValue("");
+                row_ce.getCell(62).setCellValue("");
+                row_ce.getCell(63).setCellValue("");
+                row_ce.getCell(64).setCellValue("");
                 row_ce.getCell(65).setCellValue("");
                 row_ce.getCell(66).setCellValue("");
+            }
+
+            // bedroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
+            try {
+                row_ce.getCell(67).setCellValue(units.get(key).bedroom3.getFloor_score());
+                row_ce.getCell(68).setCellValue(units.get(key).bedroom3.getWallsceiling_score());
+                row_ce.getCell(69).setCellValue(units.get(key).bedroom3.getDoor_score());
+                row_ce.getCell(70).setCellValue(units.get(key).bedroom3.getCloset_score());
+                row_ce.getCell(71).setCellValue(units.get(key).bedroom3.getWindows_score());
+                row_ce.getCell(72).setCellValue(units.get(key).bedroom3.getWindows_score());
+                row_ce.getCell(73).setCellValue(units.get(key).bedroom3.getBlindsdrapes_score());
+                row_ce.getCell(74).setCellValue(units.get(key).bedroom3.getLight_score());
+            } catch (NullPointerException e) {
                 row_ce.getCell(67).setCellValue("");
                 row_ce.getCell(68).setCellValue("");
                 row_ce.getCell(69).setCellValue("");
@@ -643,46 +629,46 @@ public class IntOutput {
                 row_ce.getCell(71).setCellValue("");
                 row_ce.getCell(72).setCellValue("");
                 row_ce.getCell(73).setCellValue("");
-            }
-
-            // bedroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
-            try {
-                row_ce.getCell(74).setCellValue(getNum(units.get(key).bedroom3.getFloor_score()));
-                row_ce.getCell(75).setCellValue(getNum(units.get(key).bedroom3.getWallsceiling_score()));
-                row_ce.getCell(76).setCellValue(getNum(units.get(key).bedroom3.getDoor_score()));
-                row_ce.getCell(77).setCellValue(getNum(units.get(key).bedroom3.getCloset_score()));
-                row_ce.getCell(78).setCellValue(getNum(units.get(key).bedroom3.getWindows_score()));
-                row_ce.getCell(79).setCellValue(units.get(key).entry.getWindows_number());
-                row_ce.getCell(80).setCellValue(getNum(units.get(key).bedroom3.getBlindsdrapes_score()));
-                row_ce.getCell(81).setCellValue(getNum(units.get(key).bedroom3.getLight_score()));
-                row_ce.getCell(82).setCellValue(getNum(units.get(key).bedroom3.getCeilingfan_score()));
-            } catch (NullPointerException e) {
-                row_ce.getCell(74).setCellValue("");
-                row_ce.getCell(75).setCellValue("");
-                row_ce.getCell(76).setCellValue("");
-                row_ce.getCell(77).setCellValue("");
-                row_ce.getCell(78).setCellValue("");
-                row_ce.getCell(79).setCellValue("");
-                row_ce.getCell(80).setCellValue("");
-                row_ce.getCell(81).setCellValue("");
-                row_ce.getCell(82).setCellValue("");
+                row_ce.getCell(73).setCellValue("");
             }
 
             // bathroom 2 (try to add it, if it doesn't exist, fill it with blank slots)
             try {
-                row_ce.getCell(95).setCellValue(getNum(units.get(key).bathroom2.getFloor_score()));
-                row_ce.getCell(96).setCellValue(getNum(units.get(key).bathroom2.getWallsceiling_score()));
-                row_ce.getCell(97).setCellValue(getNum(units.get(key).bathroom2.getDoor_score()));
-                row_ce.getCell(98).setCellValue(getNum(units.get(key).bathroom2.getWindows_score()));
-                row_ce.getCell(99).setCellValue(units.get(key).bathroom2.getWindows_number());
-                row_ce.getCell(100).setCellValue(getNum(units.get(key).bathroom2.getBlindsdrapes_score()));
-                row_ce.getCell(101).setCellValue(getNum(units.get(key).bathroom2.getLight_score()));
-                row_ce.getCell(102).setCellValue(getNum(units.get(key).bathroom2.getSink_score()));
-                row_ce.getCell(103).setCellValue(getNum(units.get(key).bathroom2.getTubshower_score()));
-                row_ce.getCell(104).setCellValue(getNum(units.get(key).bathroom2.getCommode_score()));
-                row_ce.getCell(105).setCellValue(getNum(units.get(key).bathroom2.getMedicinecabinet_score()));
-                row_ce.getCell(106).setCellValue(getNum(units.get(key).bathroom2.getMirror_score()));
+                row_ce.getCell(84).setCellValue(units.get(key).bathroom2.getFloor_score());
+                row_ce.getCell(85).setCellValue(units.get(key).bathroom2.getWallsceiling_score());
+                row_ce.getCell(86).setCellValue(units.get(key).bathroom2.getDoor_score());
+                row_ce.getCell(87).setCellValue(units.get(key).bathroom2.getLight_score());
+                row_ce.getCell(88).setCellValue(units.get(key).bathroom2.getCountertop_score());
+                row_ce.getCell(89).setCellValue(units.get(key).bathroom2.getTubshower_score());
+                row_ce.getCell(90).setCellValue(units.get(key).bathroom2.getCommode_score());
+                row_ce.getCell(91).setCellValue(units.get(key).bathroom2.getMedicinecabinet_score());
+                row_ce.getCell(92).setCellValue(units.get(key).bathroom2.getMirror_score());
             } catch (NullPointerException e) {
+                row_ce.getCell(84).setCellValue("");
+                row_ce.getCell(85).setCellValue("");
+                row_ce.getCell(86).setCellValue("");
+                row_ce.getCell(87).setCellValue("");
+                row_ce.getCell(88).setCellValue("");
+                row_ce.getCell(89).setCellValue("");
+                row_ce.getCell(90).setCellValue("");
+                row_ce.getCell(91).setCellValue("");
+                row_ce.getCell(92).setCellValue("");
+            }
+
+            // bathroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
+            try {
+                row_ce.getCell(93).setCellValue(units.get(key).bathroom3.getFloor_score());
+                row_ce.getCell(94).setCellValue(units.get(key).bathroom3.getWallsceiling_score());
+                row_ce.getCell(95).setCellValue(units.get(key).bathroom3.getDoor_score());
+                row_ce.getCell(96).setCellValue(units.get(key).bathroom3.getLight_score());
+                row_ce.getCell(97).setCellValue(units.get(key).bathroom3.getCountertop_score());
+                row_ce.getCell(98).setCellValue(units.get(key).bathroom3.getTubshower_score());
+                row_ce.getCell(99).setCellValue(units.get(key).bathroom3.getCommode_score());
+                row_ce.getCell(100).setCellValue(units.get(key).bathroom3.getMedicinecabinet_score());
+                row_ce.getCell(101).setCellValue(units.get(key).bathroom3.getMirror_score());
+            } catch (NullPointerException e) {
+                row_ce.getCell(93).setCellValue("");
+                row_ce.getCell(94).setCellValue("");
                 row_ce.getCell(95).setCellValue("");
                 row_ce.getCell(96).setCellValue("");
                 row_ce.getCell(97).setCellValue("");
@@ -690,129 +676,92 @@ public class IntOutput {
                 row_ce.getCell(99).setCellValue("");
                 row_ce.getCell(100).setCellValue("");
                 row_ce.getCell(101).setCellValue("");
-                row_ce.getCell(102).setCellValue("");
-                row_ce.getCell(103).setCellValue("");
-                row_ce.getCell(104).setCellValue("");
-                row_ce.getCell(105).setCellValue("");
-                row_ce.getCell(106).setCellValue("");
-            }
-
-            // bathroom 3 (try to add it, if it doesn't exist, fill it with blank slots)
-            try {
-                row_ce.getCell(107).setCellValue(getNum(units.get(key).bathroom3.getFloor_score()));
-                row_ce.getCell(108).setCellValue(getNum(units.get(key).bathroom3.getWallsceiling_score()));
-                row_ce.getCell(109).setCellValue(getNum(units.get(key).bathroom3.getDoor_score()));
-                row_ce.getCell(110).setCellValue(getNum(units.get(key).bathroom3.getWindows_score()));
-                row_ce.getCell(111).setCellValue(units.get(key).bathroom3.getWindows_number());
-                row_ce.getCell(112).setCellValue(getNum(units.get(key).bathroom3.getBlindsdrapes_score()));
-                row_ce.getCell(113).setCellValue(getNum(units.get(key).bathroom3.getLight_score()));
-                row_ce.getCell(114).setCellValue(getNum(units.get(key).bathroom3.getSink_score()));
-                row_ce.getCell(115).setCellValue(getNum(units.get(key).bathroom3.getTubshower_score()));
-                row_ce.getCell(116).setCellValue(getNum(units.get(key).bathroom3.getCommode_score()));
-                row_ce.getCell(117).setCellValue(getNum(units.get(key).bathroom3.getMedicinecabinet_score()));
-                row_ce.getCell(118).setCellValue(getNum(units.get(key).bathroom3.getMirror_score()));
-            } catch (NullPointerException e) {
-                row_ce.getCell(107).setCellValue("");
-                row_ce.getCell(108).setCellValue("");
-                row_ce.getCell(109).setCellValue("");
-                row_ce.getCell(110).setCellValue("");
-                row_ce.getCell(111).setCellValue("");
-                row_ce.getCell(112).setCellValue("");
-                row_ce.getCell(113).setCellValue("");
-                row_ce.getCell(114).setCellValue("");
-                row_ce.getCell(115).setCellValue("");
-                row_ce.getCell(116).setCellValue("");
-                row_ce.getCell(117).setCellValue("");
-                row_ce.getCell(118).setCellValue("");
             }
 
             // occupied
             if(units.get(key).overall.getOccupancy() != null) {
                 if (units.get(key).overall.getOccupancy().equals("Occupied")) {
-                    row_ce.getCell(119).setCellValue("X");
+                    row_ce.getCell(102).setCellValue("X");
                 } else {
-                    row_ce.getCell(119).setCellValue("");
+                    row_ce.getCell(102).setCellValue("");
                 }
             
 
                 // vacant
                 if (units.get(key).overall.getOccupancy().equals("Vacant")) {
-                    row_ce.getCell(120).setCellValue("X");
+                    row_ce.getCell(103).setCellValue("X");
                 } else {
-                    row_ce.getCell(120).setCellValue("");
+                    row_ce.getCell(103).setCellValue("");
                 }
             }
 
             // cleanliness
-            row_ce.getCell(121).setCellValue(units.get(key).overall.getCleanlinesss_score());
+            row_ce.getCell(104).setCellValue(units.get(key).overall.getCleanlinesss_score());
 
             // furnishings
-            row_ce.getCell(122).setCellValue(units.get(key).overall.getFurnishings_score());
+            row_ce.getCell(105).setCellValue(units.get(key).overall.getFurnishings_score());
 
             // dog
             if (units.get(key).overall.isPets_dog()) {
-                row_ce.getCell(123).setCellValue("X");
+                row_ce.getCell(106).setCellValue("X");
             } else {
-                row_ce.getCell(123).setCellValue("");
+                row_ce.getCell(106).setCellValue("");
             }
 
             // cat
             if (units.get(key).overall.isPets_cat()) {
-                row_ce.getCell(124).setCellValue("X");
+                row_ce.getCell(107).setCellValue("X");
             } else {
-                row_ce.getCell(124).setCellValue("");
+                row_ce.getCell(107).setCellValue("");
             }
 
             // other
             if (units.get(key).overall.isPets_other()) {
-                row_ce.getCell(125).setCellValue("X");
+                row_ce.getCell(108).setCellValue("X");
             } else {
-                row_ce.getCell(125).setCellValue("");
+                row_ce.getCell(108).setCellValue("");
             }
 
             // number of pets
-            row_ce.getCell(126).setCellValue(units.get(key).overall.getPets_number());
+            row_ce.getCell(109).setCellValue(units.get(key).overall.getPets_number());
 
             // smoker
             if (units.get(key).overall.isSmoker()) {
-                row_ce.getCell(127).setCellValue("X");
+                row_ce.getCell(110).setCellValue("X");
             } else {
-                row_ce.getCell(127).setCellValue("");
+                row_ce.getCell(110).setCellValue("");
             }
 
             // hoarder
             if (units.get(key).overall.isHoarder()) {
-                row_ce.getCell(128).setCellValue("X");
+                row_ce.getCell(111).setCellValue("X");
             } else {
-                row_ce.getCell(128).setCellValue("");
+                row_ce.getCell(111).setCellValue("");
             }
 
             // smoke detectors
             if (units.get(key).overall.isHasSmokeDetectors()) {
-                row_ce.getCell(129).setCellValue("X");
+                row_ce.getCell(112).setCellValue("X");
             } else {
-                row_ce.getCell(129).setCellValue("");
+                row_ce.getCell(112).setCellValue("");
             }
 
             // letter grade
-            row_ce.getCell(130).setCellValue(units.get(key).overall.getLetter_grade());
+            row_ce.getCell(113).setCellValue(units.get(key).overall.getLetter_grade());
 
             // </editor-fold>
+            
             // update global
             r++;
         }
-        
-        // do the formula calculation
-            XSSFFormulaEvaluator.evaluateAllFormulaCells(wb);
-        
-    } // end outputScores()
+    } // end outputScoresForCapEx()
 
     /**
      * Outputs the details to the Details worksheet
      */
     public void outputDetails() {
 
-        // make some variables
+        // update global starting point
         r = 7;
 
         // create a set of keys and parse through the units
@@ -825,7 +774,9 @@ public class IntOutput {
 
             // This huge block of code basically just puts the values of the
             // "not scores" into the specified slots in the sheet
+            
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
+            
             // entry
             row.getCell(2).setCellValue(units.get(key).entry.getDoor_type());
             row.getCell(3).setCellValue(units.get(key).entry.getDoor_variety());
@@ -860,210 +811,189 @@ public class IntOutput {
             row.getCell(30).setCellValue(units.get(key).livingroom.getLight_type());
             row.getCell(31).setCellValue(units.get(key).livingroom.getLight_finish());
             row.getCell(32).setCellValue(units.get(key).livingroom.getPatio_door_type());
-            row.getCell(33).setCellValue(units.get(key).livingroom.getPatio_door_variety());
-            row.getCell(34).setCellValue(units.get(key).livingroom.getPatio_door_material());
-            row.getCell(35).setCellValue(units.get(key).livingroom.getFireplace_type());
+            row.getCell(33).setCellValue(units.get(key).livingroom.getPatio_balcony());
+            row.getCell(34).setCellValue(units.get(key).livingroom.getFireplace_type());
 
             // dining room
-            row.getCell(36).setCellValue(units.get(key).diningroom.getDoor_type());
-            row.getCell(37).setCellValue(units.get(key).diningroom.getDoor_variety());
-            row.getCell(38).setCellValue(units.get(key).diningroom.getDoor_material());
-            row.getCell(39).setCellValue(units.get(key).diningroom.getFloor_type());
-            row.getCell(40).setCellValue(units.get(key).diningroom.getFloor_waterdamage());
-            row.getCell(41).setCellValue(units.get(key).diningroom.getWallsceiling_waterdamage());
-            row.getCell(42).setCellValue(units.get(key).diningroom.getWindows_waterdamage());
-            row.getCell(43).setCellValue(units.get(key).diningroom.getWalls_type());
-            row.getCell(44).setCellValue(units.get(key).diningroom.getCeiling_type());
-            row.getCell(45).setCellValue(units.get(key).diningroom.getCloset_door_type());
-            row.getCell(46).setCellValue(units.get(key).diningroom.getCloset_door_variety());
-            row.getCell(47).setCellValue(units.get(key).diningroom.getCloset_door_material());
-            row.getCell(48).setCellValue(units.get(key).diningroom.getWindows_type());
-            row.getCell(49).setCellValue(units.get(key).diningroom.getBlindsdrapes_type());
-            row.getCell(50).setCellValue(units.get(key).diningroom.getLight_type());
-            row.getCell(51).setCellValue(units.get(key).diningroom.getLight_finish());
+            row.getCell(35).setCellValue(units.get(key).diningroom.getDoor_type());
+            row.getCell(36).setCellValue(units.get(key).diningroom.getDoor_variety());
+            row.getCell(37).setCellValue(units.get(key).diningroom.getDoor_material());
+            row.getCell(38).setCellValue(units.get(key).diningroom.getFloor_type());
+            row.getCell(39).setCellValue(units.get(key).diningroom.getFloor_waterdamage());
+            row.getCell(40).setCellValue(units.get(key).diningroom.getWallsceiling_waterdamage());
+            row.getCell(41).setCellValue(units.get(key).diningroom.getWindows_waterdamage());
+            row.getCell(42).setCellValue(units.get(key).diningroom.getWalls_type());
+            row.getCell(43).setCellValue(units.get(key).diningroom.getCeiling_type());
+            row.getCell(44).setCellValue(units.get(key).diningroom.getWindows_type());
+            row.getCell(45).setCellValue(units.get(key).diningroom.getBlindsdrapes_type());
+            row.getCell(46).setCellValue(units.get(key).diningroom.getLight_type());
+            row.getCell(47).setCellValue(units.get(key).diningroom.getLight_finish());
 
             // kitchen
-            row.getCell(52).setCellValue(units.get(key).kitchen.getDoor_type());
-            row.getCell(53).setCellValue(units.get(key).kitchen.getDoor_variety());
-            row.getCell(54).setCellValue(units.get(key).kitchen.getDoor_material());
-            row.getCell(55).setCellValue(units.get(key).kitchen.getFloor_type());
-            row.getCell(56).setCellValue(units.get(key).kitchen.getFloor_waterdamage());
-            row.getCell(57).setCellValue(units.get(key).kitchen.getWallsceiling_waterdamage());
-            row.getCell(58).setCellValue(units.get(key).kitchen.getWindows_waterdamage());
-            row.getCell(59).setCellValue(units.get(key).kitchen.getWalls_type());
-            row.getCell(60).setCellValue(units.get(key).kitchen.getCeiling_type());
-            row.getCell(61).setCellValue(units.get(key).kitchen.getWindows_type());
-            row.getCell(62).setCellValue(units.get(key).kitchen.getBlindsdrapes_type());
-            row.getCell(63).setCellValue(units.get(key).kitchen.getPantry_door_type());
-            row.getCell(64).setCellValue(units.get(key).kitchen.getPantry_door_variety());
-            row.getCell(65).setCellValue(units.get(key).kitchen.getPantry_door_material());
-            row.getCell(66).setCellValue(units.get(key).kitchen.getLight_type());
-            row.getCell(67).setCellValue(units.get(key).kitchen.getLight_finish());
-            row.getCell(68).setCellValue(units.get(key).kitchen.getSink_type());
-            row.getCell(69).setCellValue(units.get(key).kitchen.getSink_material());
-            row.getCell(70).setCellValue(units.get(key).kitchen.getCabinets_type());
-            row.getCell(71).setCellValue(units.get(key).kitchen.getCountertops_type());
-            row.getCell(72).setCellValue(units.get(key).kitchen.getPassbar_type());
+            row.getCell(48).setCellValue(units.get(key).kitchen.getDoor_type());
+            row.getCell(49).setCellValue(units.get(key).kitchen.getDoor_variety());
+            row.getCell(50).setCellValue(units.get(key).kitchen.getDoor_material());
+            row.getCell(51).setCellValue(units.get(key).kitchen.getFloor_type());
+            row.getCell(52).setCellValue(units.get(key).kitchen.getFloor_waterdamage());
+            row.getCell(53).setCellValue(units.get(key).kitchen.getWallsceiling_waterdamage());
+            row.getCell(54).setCellValue(units.get(key).kitchen.getWindows_waterdamage());
+            row.getCell(55).setCellValue(units.get(key).kitchen.getWalls_type());
+            row.getCell(56).setCellValue(units.get(key).kitchen.getCeiling_type());
+            row.getCell(57).setCellValue(units.get(key).kitchen.getWindows_type());
+            row.getCell(58).setCellValue(units.get(key).kitchen.getBlindsdrapes_type());
+            row.getCell(59).setCellValue(units.get(key).kitchen.getPantry_door_type());
+            row.getCell(60).setCellValue(units.get(key).kitchen.getPantry_door_variety());
+            row.getCell(61).setCellValue(units.get(key).kitchen.getPantry_door_material());
+            row.getCell(62).setCellValue(units.get(key).kitchen.getLight_type());
+            row.getCell(63).setCellValue(units.get(key).kitchen.getLight_finish());
+            row.getCell(64).setCellValue(units.get(key).kitchen.getSink_type());
+            row.getCell(65).setCellValue(units.get(key).kitchen.getCabinets_type());
+            row.getCell(66).setCellValue(units.get(key).kitchen.getCountertops_type());
+            row.getCell(67).setCellValue(units.get(key).kitchen.getPassbar_type());
 
             // mechanical
-            row.getCell(73).setCellValue(units.get(key).mechanical.getRange_model());
-            row.getCell(74).setCellValue(units.get(key).mechanical.getRange_finish());
-            row.getCell(75).setCellValue(units.get(key).mechanical.getRange_type());
-            row.getCell(76).setCellValue(units.get(key).mechanical.getFridge_model());
-            row.getCell(77).setCellValue(units.get(key).mechanical.getFridge_finish());
-            row.getCell(78).setCellValue(units.get(key).mechanical.getFridge_icemaker());
-            row.getCell(79).setCellValue(units.get(key).mechanical.getDishwasher_model());
-            row.getCell(80).setCellValue(units.get(key).mechanical.getDishwasher_finish());
-            row.getCell(81).setCellValue(units.get(key).mechanical.getMicrowave_model());
-            row.getCell(82).setCellValue(units.get(key).mechanical.getMicrowave_finish());
-            row.getCell(83).setCellValue(units.get(key).mechanical.getHood_model());
-            row.getCell(84).setCellValue(units.get(key).mechanical.getHood_finish());
-            row.getCell(85).setCellValue(units.get(key).mechanical.getHvac_model());
-            row.getCell(86).setCellValue(units.get(key).mechanical.getWater_heater_model());
-            row.getCell(87).setCellValue(units.get(key).mechanical.getWasher_dryer_model());
-            row.getCell(88).setCellValue(units.get(key).mechanical.getWasher_dryer_finish());
-            row.getCell(89).setCellValue(units.get(key).mechanical.isHasHookup());
+            row.getCell(68).setCellValue(units.get(key).mechanical.getRange_model());
+            row.getCell(69).setCellValue(units.get(key).mechanical.getRange_finish());
+            row.getCell(70).setCellValue(units.get(key).mechanical.getRange_type());
+            row.getCell(71).setCellValue(units.get(key).mechanical.getFridge_model());
+            row.getCell(72).setCellValue(units.get(key).mechanical.getFridge_finish());
+            row.getCell(73).setCellValue(units.get(key).mechanical.getFridge_icemaker());
+            row.getCell(74).setCellValue(units.get(key).mechanical.getDishwasher_model());
+            row.getCell(75).setCellValue(units.get(key).mechanical.getDishwasher_finish());
+            row.getCell(76).setCellValue(units.get(key).mechanical.getHood_microwave());
+            row.getCell(77).setCellValue(units.get(key).mechanical.getHood_model());
+            row.getCell(78).setCellValue(units.get(key).mechanical.getHood_finish());
+            row.getCell(79).setCellValue(units.get(key).mechanical.getHvac_model());
+            row.getCell(80).setCellValue(units.get(key).mechanical.getHvac_type());
+            row.getCell(81).setCellValue(units.get(key).mechanical.getWater_heater_model());
+            row.getCell(82).setCellValue(units.get(key).mechanical.getWater_heater_type());
+            row.getCell(83).setCellValue(units.get(key).mechanical.getWasher_dryer_model());
+            row.getCell(84).setCellValue(units.get(key).mechanical.getWasher_dryer_finish());
+            row.getCell(85).setCellValue(units.get(key).mechanical.isHasHookup());
 
             // utility
-            row.getCell(90).setCellValue(units.get(key).utility.getDoor_type());
-            row.getCell(91).setCellValue(units.get(key).utility.getDoor_variety());
-            row.getCell(92).setCellValue(units.get(key).utility.getDoor_material());
-            row.getCell(93).setCellValue(units.get(key).utility.getFloor_type());
-            row.getCell(94).setCellValue(units.get(key).utility.getFloor_waterdamage());
-            row.getCell(95).setCellValue(units.get(key).utility.getWallsceiling_waterdamage());
-            row.getCell(96).setCellValue(units.get(key).utility.getWalls_type());
-            row.getCell(97).setCellValue(units.get(key).utility.getCeiling_type());
-            row.getCell(98).setCellValue(units.get(key).utility.getLight_type());
-            row.getCell(99).setCellValue(units.get(key).utility.getLight_finish());
-
+            row.getCell(86).setCellValue(units.get(key).utility.getDoor_type());
+            row.getCell(87).setCellValue(units.get(key).utility.getDoor_variety());
+            row.getCell(88).setCellValue(units.get(key).utility.getDoor_material());
+            row.getCell(89).setCellValue(units.get(key).utility.getFloor_type());
+            row.getCell(90).setCellValue(units.get(key).utility.getFloor_waterdamage());
+            row.getCell(91).setCellValue(units.get(key).utility.getWallsceiling_waterdamage());
+            row.getCell(92).setCellValue(units.get(key).utility.getWalls_type());
+            row.getCell(93).setCellValue(units.get(key).utility.getCeiling_type());
+            row.getCell(94).setCellValue(units.get(key).utility.getLight_type());
+            row.getCell(95).setCellValue(units.get(key).utility.getLight_finish());
+            
             // bedroom 1
-            row.getCell(100).setCellValue(units.get(key).bedroom1.getDoor_type());
-            row.getCell(101).setCellValue(units.get(key).bedroom1.getDoor_variety());
-            row.getCell(102).setCellValue(units.get(key).bedroom1.getDoor_material());
-            row.getCell(103).setCellValue(units.get(key).bedroom1.getFloor_type());
-            row.getCell(104).setCellValue(units.get(key).bedroom1.getFloor_waterdamage());
-            row.getCell(105).setCellValue(units.get(key).bedroom1.getWallsceiling_waterdamage());
-            row.getCell(106).setCellValue(units.get(key).bedroom1.getWindows_waterdamage());
-            row.getCell(107).setCellValue(units.get(key).bedroom1.getWalls_type());
-            row.getCell(108).setCellValue(units.get(key).bedroom1.getCeiling_type());
-            row.getCell(109).setCellValue(units.get(key).bedroom1.getCloset_door_type());
-            row.getCell(110).setCellValue(units.get(key).bedroom1.getCloset_door_variety());
-            row.getCell(111).setCellValue(units.get(key).bedroom1.getCloset_door_material());
-            row.getCell(112).setCellValue(units.get(key).bedroom1.getWindows_type());
-            row.getCell(113).setCellValue(units.get(key).bedroom1.getBlindsdrapes_type());
-            row.getCell(114).setCellValue(units.get(key).bedroom1.getLight_type());
-            row.getCell(115).setCellValue(units.get(key).bedroom1.getLight_finish());
+            row.getCell(96).setCellValue(units.get(key).bedroom1.getDoor_type());
+            row.getCell(97).setCellValue(units.get(key).bedroom1.getDoor_variety());
+            row.getCell(98).setCellValue(units.get(key).bedroom1.getFloor_type());
+            row.getCell(99).setCellValue(units.get(key).bedroom1.getFloor_waterdamage());
+            row.getCell(100).setCellValue(units.get(key).bedroom1.getWallsceiling_waterdamage());
+            row.getCell(101).setCellValue(units.get(key).bedroom1.getWindows_waterdamage());
+            row.getCell(102).setCellValue(units.get(key).bedroom1.getWalls_type());
+            row.getCell(103).setCellValue(units.get(key).bedroom1.getCeiling_type());
+            row.getCell(104).setCellValue(units.get(key).bedroom1.getCloset_door_type());
+            row.getCell(105).setCellValue(units.get(key).bedroom1.getCloset_door_variety());
+            row.getCell(106).setCellValue(units.get(key).bedroom1.getCloset_door_material());
+            row.getCell(107).setCellValue(units.get(key).bedroom1.getWindows_type());
+            row.getCell(108).setCellValue(units.get(key).bedroom1.getBlindsdrapes_type());
+            row.getCell(109).setCellValue(units.get(key).bedroom1.getLight_type());
+            row.getCell(110).setCellValue(units.get(key).bedroom1.getLight_finish());
 
             // bedroom 2 (Try to add it, if it doesn't exist, leave the fields blank)
             try {
-                row.getCell(116).setCellValue(units.get(key).bedroom2.getDoor_type());
-                row.getCell(117).setCellValue(units.get(key).bedroom2.getDoor_variety());
-                row.getCell(118).setCellValue(units.get(key).bedroom2.getDoor_material());
-                row.getCell(119).setCellValue(units.get(key).bedroom2.getFloor_type());
-                row.getCell(120).setCellValue(units.get(key).bedroom2.getFloor_waterdamage());
-                row.getCell(121).setCellValue(units.get(key).bedroom2.getWallsceiling_waterdamage());
-                row.getCell(122).setCellValue(units.get(key).bedroom2.getWindows_waterdamage());
-                row.getCell(123).setCellValue(units.get(key).bedroom2.getWalls_type());
-                row.getCell(124).setCellValue(units.get(key).bedroom2.getCeiling_type());
-                row.getCell(125).setCellValue(units.get(key).bedroom2.getCloset_door_type());
-                row.getCell(126).setCellValue(units.get(key).bedroom2.getCloset_door_variety());
-                row.getCell(127).setCellValue(units.get(key).bedroom2.getCloset_door_material());
-                row.getCell(128).setCellValue(units.get(key).bedroom2.getWindows_type());
-                row.getCell(129).setCellValue(units.get(key).bedroom2.getBlindsdrapes_type());
-                row.getCell(130).setCellValue(units.get(key).bedroom2.getLight_type());
-                row.getCell(131).setCellValue(units.get(key).bedroom2.getLight_finish());
+                row.getCell(111).setCellValue(units.get(key).bedroom2.getDoor_type());
+                row.getCell(112).setCellValue(units.get(key).bedroom2.getDoor_variety());
+                row.getCell(113).setCellValue(units.get(key).bedroom2.getFloor_type());
+                row.getCell(114).setCellValue(units.get(key).bedroom2.getFloor_waterdamage());
+                row.getCell(115).setCellValue(units.get(key).bedroom2.getWallsceiling_waterdamage());
+                row.getCell(116).setCellValue(units.get(key).bedroom2.getWindows_waterdamage());
+                row.getCell(117).setCellValue(units.get(key).bedroom2.getWalls_type());
+                row.getCell(118).setCellValue(units.get(key).bedroom2.getCeiling_type());
+                row.getCell(119).setCellValue(units.get(key).bedroom2.getCloset_door_type());
+                row.getCell(120).setCellValue(units.get(key).bedroom2.getCloset_door_variety());
+                row.getCell(121).setCellValue(units.get(key).bedroom2.getCloset_door_material());
+                row.getCell(122).setCellValue(units.get(key).bedroom2.getWindows_type());
+                row.getCell(123).setCellValue(units.get(key).bedroom2.getBlindsdrapes_type());
+                row.getCell(124).setCellValue(units.get(key).bedroom2.getLight_type());
+                row.getCell(125).setCellValue(units.get(key).bedroom2.getLight_finish());
             } catch (NullPointerException ex) {
                 // do nothing
             }
 
             // bedroom 3 (Try to add it, if it doesn't exist, leave the fields blank)
             try {
-                row.getCell(132).setCellValue(units.get(key).bedroom3.getDoor_type());
-                row.getCell(133).setCellValue(units.get(key).bedroom3.getDoor_variety());
-                row.getCell(134).setCellValue(units.get(key).bedroom3.getDoor_material());
-                row.getCell(135).setCellValue(units.get(key).bedroom3.getFloor_type());
-                row.getCell(136).setCellValue(units.get(key).bedroom3.getFloor_waterdamage());
-                row.getCell(137).setCellValue(units.get(key).bedroom3.getWallsceiling_waterdamage());
-                row.getCell(138).setCellValue(units.get(key).bedroom3.getWindows_waterdamage());
-                row.getCell(139).setCellValue(units.get(key).bedroom3.getWalls_type());
-                row.getCell(140).setCellValue(units.get(key).bedroom3.getCeiling_type());
-                row.getCell(141).setCellValue(units.get(key).bedroom3.getCloset_door_type());
-                row.getCell(142).setCellValue(units.get(key).bedroom3.getCloset_door_variety());
-                row.getCell(143).setCellValue(units.get(key).bedroom3.getCloset_door_material());
-                row.getCell(144).setCellValue(units.get(key).bedroom3.getWindows_type());
-                row.getCell(145).setCellValue(units.get(key).bedroom3.getBlindsdrapes_type());
-                row.getCell(146).setCellValue(units.get(key).bedroom3.getLight_type());
-                row.getCell(147).setCellValue(units.get(key).bedroom3.getLight_finish());
+                row.getCell(126).setCellValue(units.get(key).bedroom3.getDoor_type());
+                row.getCell(127).setCellValue(units.get(key).bedroom3.getDoor_variety());
+                row.getCell(128).setCellValue(units.get(key).bedroom3.getFloor_type());
+                row.getCell(129).setCellValue(units.get(key).bedroom3.getFloor_waterdamage());
+                row.getCell(130).setCellValue(units.get(key).bedroom3.getWallsceiling_waterdamage());
+                row.getCell(131).setCellValue(units.get(key).bedroom3.getWindows_waterdamage());
+                row.getCell(132).setCellValue(units.get(key).bedroom3.getWalls_type());
+                row.getCell(133).setCellValue(units.get(key).bedroom3.getCeiling_type());
+                row.getCell(134).setCellValue(units.get(key).bedroom3.getCloset_door_type());
+                row.getCell(135).setCellValue(units.get(key).bedroom3.getCloset_door_variety());
+                row.getCell(136).setCellValue(units.get(key).bedroom3.getCloset_door_material());
+                row.getCell(137).setCellValue(units.get(key).bedroom3.getWindows_type());
+                row.getCell(138).setCellValue(units.get(key).bedroom3.getBlindsdrapes_type());
+                row.getCell(139).setCellValue(units.get(key).bedroom3.getLight_type());
+                row.getCell(140).setCellValue(units.get(key).bedroom3.getLight_finish());
             } catch (NullPointerException ex) {
                 // do nothing
             }
 
             // bathroom 1
-            row.getCell(148).setCellValue(units.get(key).bathroom1.getDoor_type());
-            row.getCell(149).setCellValue(units.get(key).bathroom1.getDoor_variety());
-            row.getCell(150).setCellValue(units.get(key).bathroom1.getDoor_material());
-            row.getCell(151).setCellValue(units.get(key).bathroom1.getFloor_type());
-            row.getCell(152).setCellValue(units.get(key).bathroom1.getFloor_waterdamage());
-            row.getCell(153).setCellValue(units.get(key).bathroom1.getWallsceiling_waterdamage());
-            row.getCell(154).setCellValue(units.get(key).bathroom1.getWindows_waterdamage());
-            row.getCell(155).setCellValue(units.get(key).bathroom1.getWalls_type());
-            row.getCell(156).setCellValue(units.get(key).bathroom1.getCeiling_type());
-            row.getCell(157).setCellValue(units.get(key).bathroom1.getWindows_type());
-            row.getCell(158).setCellValue(units.get(key).bathroom1.getBlindsdrapes_type());
-            row.getCell(159).setCellValue(units.get(key).bathroom1.getLight_type());
-            row.getCell(160).setCellValue(units.get(key).bathroom1.getLight_finish());
-            row.getCell(161).setCellValue(units.get(key).bathroom1.getSink_type());
-            row.getCell(162).setCellValue(units.get(key).bathroom1.getSink_material());
-            row.getCell(163).setCellValue(units.get(key).bathroom1.getTubshower_material());
-            row.getCell(164).setCellValue(units.get(key).bathroom1.getTubshower_type());
+            row.getCell(141).setCellValue(units.get(key).bathroom1.getDoor_type());
+            row.getCell(142).setCellValue(units.get(key).bathroom1.getDoor_variety());
+            row.getCell(143).setCellValue(units.get(key).bathroom1.getFloor_type());
+            row.getCell(144).setCellValue(units.get(key).bathroom1.getFloor_waterdamage());
+            row.getCell(145).setCellValue(units.get(key).bathroom1.getWallsceiling_waterdamage());
+            row.getCell(146).setCellValue(units.get(key).bathroom1.getWalls_type());
+            row.getCell(147).setCellValue(units.get(key).bathroom1.getCeiling_type());
+            row.getCell(148).setCellValue(units.get(key).bathroom1.getLight_type());
+            row.getCell(149).setCellValue(units.get(key).bathroom1.getLight_finish());
+            row.getCell(150).setCellValue(units.get(key).bathroom1.getCountertop_material());
+            row.getCell(151).setCellValue(units.get(key).bathroom1.getTubshower_material());
+            row.getCell(152).setCellValue(units.get(key).bathroom1.getTubshower_type());
 
             // bathroom 2 (Try to add it, if it doesn't exist, leave the fields blank)
             try {
-                row.getCell(165).setCellValue(units.get(key).bathroom2.getDoor_type());
-                row.getCell(166).setCellValue(units.get(key).bathroom2.getDoor_variety());
-                row.getCell(167).setCellValue(units.get(key).bathroom2.getDoor_material());
-                row.getCell(168).setCellValue(units.get(key).bathroom2.getFloor_type());
-                row.getCell(169).setCellValue(units.get(key).bathroom2.getFloor_waterdamage());
-                row.getCell(170).setCellValue(units.get(key).bathroom2.getWallsceiling_waterdamage());
-                row.getCell(171).setCellValue(units.get(key).bathroom2.getWindows_waterdamage());
-                row.getCell(172).setCellValue(units.get(key).bathroom2.getWalls_type());
-                row.getCell(173).setCellValue(units.get(key).bathroom2.getCeiling_type());
-                row.getCell(174).setCellValue(units.get(key).bathroom2.getWindows_type());
-                row.getCell(175).setCellValue(units.get(key).bathroom2.getBlindsdrapes_type());
-                row.getCell(176).setCellValue(units.get(key).bathroom2.getLight_type());
-                row.getCell(177).setCellValue(units.get(key).bathroom2.getLight_finish());
-                row.getCell(178).setCellValue(units.get(key).bathroom2.getSink_type());
-                row.getCell(179).setCellValue(units.get(key).bathroom2.getSink_material());
-                row.getCell(180).setCellValue(units.get(key).bathroom2.getTubshower_material());
-                row.getCell(181).setCellValue(units.get(key).bathroom2.getTubshower_type());
+                row.getCell(153).setCellValue(units.get(key).bathroom2.getDoor_type());
+                row.getCell(154).setCellValue(units.get(key).bathroom2.getDoor_variety());
+                row.getCell(155).setCellValue(units.get(key).bathroom2.getFloor_type());
+                row.getCell(156).setCellValue(units.get(key).bathroom2.getFloor_waterdamage());
+                row.getCell(157).setCellValue(units.get(key).bathroom2.getWallsceiling_waterdamage());
+                row.getCell(158).setCellValue(units.get(key).bathroom2.getWalls_type());
+                row.getCell(159).setCellValue(units.get(key).bathroom2.getCeiling_type());
+                row.getCell(160).setCellValue(units.get(key).bathroom2.getLight_type());
+                row.getCell(161).setCellValue(units.get(key).bathroom2.getLight_finish());
+                row.getCell(162).setCellValue(units.get(key).bathroom2.getCountertop_material());
+                row.getCell(163).setCellValue(units.get(key).bathroom2.getTubshower_material());
+                row.getCell(164).setCellValue(units.get(key).bathroom2.getTubshower_type());
             } catch (NullPointerException ex) {
                 // do nothing
             }
 
             // bathroom 3 (Try to add it, if it doesn't exist, leave the fields blank)
             try {
-                row.getCell(182).setCellValue(units.get(key).bathroom3.getDoor_type());
-                row.getCell(183).setCellValue(units.get(key).bathroom3.getDoor_variety());
-                row.getCell(184).setCellValue(units.get(key).bathroom3.getDoor_material());
-                row.getCell(185).setCellValue(units.get(key).bathroom3.getFloor_type());
-                row.getCell(186).setCellValue(units.get(key).bathroom3.getFloor_waterdamage());
-                row.getCell(187).setCellValue(units.get(key).bathroom3.getWallsceiling_waterdamage());
-                row.getCell(188).setCellValue(units.get(key).bathroom3.getWindows_waterdamage());
-                row.getCell(189).setCellValue(units.get(key).bathroom3.getWalls_type());
-                row.getCell(190).setCellValue(units.get(key).bathroom3.getCeiling_type());
-                row.getCell(191).setCellValue(units.get(key).bathroom3.getWindows_type());
-                row.getCell(192).setCellValue(units.get(key).bathroom3.getBlindsdrapes_type());
-                row.getCell(193).setCellValue(units.get(key).bathroom3.getLight_type());
-                row.getCell(194).setCellValue(units.get(key).bathroom3.getLight_finish());
-                row.getCell(195).setCellValue(units.get(key).bathroom3.getSink_type());
-                row.getCell(196).setCellValue(units.get(key).bathroom3.getSink_material());
-                row.getCell(197).setCellValue(units.get(key).bathroom3.getTubshower_material());
-                row.getCell(198).setCellValue(units.get(key).bathroom3.getTubshower_type());
+                row.getCell(165).setCellValue(units.get(key).bathroom3.getDoor_type());
+                row.getCell(166).setCellValue(units.get(key).bathroom3.getDoor_variety());
+                row.getCell(167).setCellValue(units.get(key).bathroom3.getFloor_type());
+                row.getCell(168).setCellValue(units.get(key).bathroom3.getFloor_waterdamage());
+                row.getCell(169).setCellValue(units.get(key).bathroom3.getWallsceiling_waterdamage());
+                row.getCell(170).setCellValue(units.get(key).bathroom3.getWalls_type());
+                row.getCell(171).setCellValue(units.get(key).bathroom3.getCeiling_type());
+                row.getCell(172).setCellValue(units.get(key).bathroom3.getLight_type());
+                row.getCell(173).setCellValue(units.get(key).bathroom3.getLight_finish());
+                row.getCell(174).setCellValue(units.get(key).bathroom3.getCountertop_material());
+                row.getCell(175).setCellValue(units.get(key).bathroom3.getTubshower_material());
+                row.getCell(176).setCellValue(units.get(key).bathroom3.getTubshower_type());
             } catch (NullPointerException ex) {
                 // do nothing
             }
 
             // </editor-fold>
+            
             // update global
             r++;
         }
@@ -1089,7 +1019,9 @@ public class IntOutput {
             // This huge block of code basically just checks to see if there's a
             // note in the field
             // If there is, put it in, else skip it
+            
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
+            
             // entry
             if (checkForNote(unit.entry.getEntry_comments())) {
                 putNote(unit, "Entry/Hall", "Overall Comments", unit.entry.getEntry_comments());
@@ -1126,6 +1058,10 @@ public class IntOutput {
             if (checkForNote(unit.entry.getLight_notes())) {
                 putNote(unit, "Entry/Hall", "Light Fixture", unit.entry.getLight_notes());
             }
+            
+            if (checkForNote(unit.entry.getUnaccounted_items())) {
+                putNote(unit, "Entry/Hall", "Unaccounted Items", unit.entry.getUnaccounted_items());
+            }
 
             // living room
             if (checkForNote(unit.livingroom.getLivingroom_comments())) {
@@ -1156,10 +1092,6 @@ public class IntOutput {
                 putNote(unit, "Living Room", "Light Fixture", unit.livingroom.getLight_notes());
             }
 
-            if (checkForNote(unit.livingroom.getCeilingfan_notes())) {
-                putNote(unit, "Living Room", "Ceiling Fan", unit.livingroom.getCeilingfan_notes());
-            }
-
             if (checkForNote(unit.livingroom.getPatio_notes())) {
                 putNote(unit, "Living Room", "Patio/Bal", unit.livingroom.getPatio_notes());
             }
@@ -1181,10 +1113,6 @@ public class IntOutput {
                 putNote(unit, "Dining Room", "Walls/Ceiling", unit.diningroom.getWallsceiling_notes());
             }
 
-            if (checkForNote(unit.diningroom.getCloset_notes())) {
-                putNote(unit, "Dining Room", "Closet", unit.diningroom.getCloset_notes());
-            }
-
             if (checkForNote(unit.diningroom.getWindows_notes())) {
                 putNote(unit, "Dining Room", "Windows", unit.diningroom.getWindows_notes());
             }
@@ -1195,10 +1123,6 @@ public class IntOutput {
 
             if (checkForNote(unit.diningroom.getLight_notes())) {
                 putNote(unit, "Dining Room", "Light Fixture", unit.diningroom.getLight_notes());
-            }
-
-            if (checkForNote(unit.diningroom.getCeilingfan_notes())) {
-                putNote(unit, "Dining Room", "Ceiling Fan", unit.diningroom.getCeilingfan_notes());
             }
 
             // kitchen
@@ -1267,10 +1191,6 @@ public class IntOutput {
                 putNote(unit, "Mechanical", "Dishwasher", unit.mechanical.getDishwasher_notes());
             }
 
-            if (checkForNote(unit.mechanical.getMicrowave_notes())) {
-                putNote(unit, "Mechanical", "Microwave", unit.mechanical.getMicrowave_notes());
-            }
-
             if (checkForNote(unit.mechanical.getHood_notes())) {
                 putNote(unit, "Mechanical", "Hood/Vent", unit.mechanical.getHood_notes());
             }
@@ -1308,10 +1228,6 @@ public class IntOutput {
                 putNote(unit, "Utility/Storage", "Floor", unit.utility.getFloor_notes());
             }
 
-            if (checkForNote(unit.utility.getSump_notes())) {
-                putNote(unit, "Utility/Storage", "Sump", unit.utility.getSump_notes());
-            }
-
             // bedroom 1
             if (checkForNote(unit.bedroom1.getBedroom_comments())) {
                 putNote(unit, "Bedroom #1", "Overall Comments", unit.bedroom1.getBedroom_comments());
@@ -1343,10 +1259,6 @@ public class IntOutput {
 
             if (checkForNote(unit.bedroom1.getLight_notes())) {
                 putNote(unit, "Bedroom 1", "Light Fixture", unit.bedroom1.getLight_notes());
-            }
-
-            if (checkForNote(unit.bedroom1.getCeilingfan_notes())) {
-                putNote(unit, "Bedroom 1", "Ceiling Fan", unit.bedroom1.getCeilingfan_notes());
             }
 
             // bedroom 2 (try it, if it doesn't exist, don't do anything)
@@ -1383,9 +1295,6 @@ public class IntOutput {
                     putNote(unit, "Bedroom 2", "Light Fixture", unit.bedroom2.getLight_notes());
                 }
 
-                if (checkForNote(unit.bedroom2.getCeilingfan_notes())) {
-                    putNote(unit, "Bedroom 2", "Ceiling Fan", unit.bedroom2.getCeilingfan_notes());
-                }
             } catch (NullPointerException ex) {
                 // do nothing
             }
@@ -1424,9 +1333,6 @@ public class IntOutput {
                     putNote(unit, "Bedroom 3", "Light Fixture", unit.bedroom3.getLight_notes());
                 }
 
-                if (checkForNote(unit.bedroom3.getCeilingfan_notes())) {
-                    putNote(unit, "Bedroom 3", "Ceiling Fan", unit.bedroom3.getCeilingfan_notes());
-                }
             } catch (NullPointerException ex) {
                 // do nothing
             }
@@ -1448,20 +1354,12 @@ public class IntOutput {
                 putNote(unit, "Bathroom 1", "Door", unit.bathroom1.getDoor_notes());
             }
 
-            if (checkForNote(unit.bathroom1.getWindows_notes())) {
-                putNote(unit, "Bathroom 1", "Windows", unit.bathroom1.getWindows_notes());
-            }
-
-            if (checkForNote(unit.bathroom1.getBlindsdrapes_notes())) {
-                putNote(unit, "Bathroom 1", "Blinds/Drapes", unit.bathroom1.getBlindsdrapes_notes());
-            }
-
             if (checkForNote(unit.bathroom1.getLight_notes())) {
                 putNote(unit, "Bathroom 1", "Light Fixture", unit.bathroom1.getLight_notes());
             }
 
-            if (checkForNote(unit.bathroom1.getSink_notes())) {
-                putNote(unit, "Bathroom 1", "Sink", unit.bathroom1.getSink_notes());
+            if (checkForNote(unit.bathroom1.getCountertop_notes())) {
+                putNote(unit, "Bathroom 1", "Countertop", unit.bathroom1.getCountertop_notes());
             }
 
             if (checkForNote(unit.bathroom1.getTubshower_notes())) {
@@ -1498,20 +1396,12 @@ public class IntOutput {
                     putNote(unit, "Bathroom 2", "Door", unit.bathroom2.getDoor_notes());
                 }
 
-                if (checkForNote(unit.bathroom2.getWindows_notes())) {
-                    putNote(unit, "Bathroom 2", "Windows", unit.bathroom2.getWindows_notes());
-                }
-
-                if (checkForNote(unit.bathroom2.getBlindsdrapes_notes())) {
-                    putNote(unit, "Bathroom 2", "Blinds/Drapes", unit.bathroom2.getBlindsdrapes_notes());
-                }
-
                 if (checkForNote(unit.bathroom2.getLight_notes())) {
                     putNote(unit, "Bathroom 2", "Light Fixture", unit.bathroom2.getLight_notes());
                 }
 
-                if (checkForNote(unit.bathroom2.getSink_notes())) {
-                    putNote(unit, "Bathroom 2", "Sink", unit.bathroom2.getSink_notes());
+                if (checkForNote(unit.bathroom2.getCountertop_notes())) {
+                    putNote(unit, "Bathroom 2", "Countertop", unit.bathroom2.getCountertop_notes());
                 }
 
                 if (checkForNote(unit.bathroom2.getTubshower_notes())) {
@@ -1551,20 +1441,12 @@ public class IntOutput {
                     putNote(unit, "Bathroom 3", "Door", unit.bathroom3.getDoor_notes());
                 }
 
-                if (checkForNote(unit.bathroom3.getWindows_notes())) {
-                    putNote(unit, "Bathroom 3", "Windows", unit.bathroom3.getWindows_notes());
-                }
-
-                if (checkForNote(unit.bathroom3.getBlindsdrapes_notes())) {
-                    putNote(unit, "Bathroom 3", "Blinds/Drapes", unit.bathroom3.getBlindsdrapes_notes());
-                }
-
                 if (checkForNote(unit.bathroom3.getLight_notes())) {
                     putNote(unit, "Bathroom 3", "Light Fixture", unit.bathroom3.getLight_notes());
                 }
 
-                if (checkForNote(unit.bathroom3.getSink_notes())) {
-                    putNote(unit, "Bathroom 3", "Sink", unit.bathroom3.getSink_notes());
+                if (checkForNote(unit.bathroom3.getCountertop_notes())) {
+                    putNote(unit, "Bathroom 3", "Countertop", unit.bathroom3.getCountertop_notes());
                 }
 
                 if (checkForNote(unit.bathroom3.getTubshower_notes())) {
@@ -1604,6 +1486,7 @@ public class IntOutput {
             }
 
             // </editor-fold>
+            
             // update global
             if (notePut) {
                 r++;
@@ -1612,9 +1495,8 @@ public class IntOutput {
     } // end outputNotes()
     
     /**
-     * Function to output the photos and create the files "export\\images\\" +
-     * unit.getUnitNum() + "\\" + pic.getSection().replace("/", "").replace(" ",
-     * "") + "_" + pic.getItem().replace("/", "").replace(" ", "") + ".jpg"
+     * Function to outputs the photos based on a link
+     * Downloads a local file and provides a web link to the file
      */
     public void outputPhotos() {
 
@@ -1645,8 +1527,8 @@ public class IntOutput {
                     File newDir = new File(imagesPath + "\\" + unit.getUnitNum());
                     newDir.mkdirs();
 
+                    // actually do the picture creation
                     try {
-                        
                         // get the url from the pic object and prepare the buffered image stream
                         url = new URL(pic.getUrl());
                         BufferedImage img = ImageIO.read(url);
@@ -1673,38 +1555,52 @@ public class IntOutput {
                 }
             }
         }
-    }
+    } // end outputPhotos()
 
     /**
      * Helper function to read existing files and check for duplicates
      * Shamelessly stolen from StackOverflow
      * 
      * @param filename
-     * @return
-     * @throws IOException 
+     * @return the new filename
      */
-    public String getNewFileName(String filename) throws IOException {
+    public String getNewFileName(String filename) {
+        
+        // create some variables
         File aFile = new File(filename);
         int fileNo = 0;
         String newFileName = "";
+        
+        // if the file exists and it's not a directory
         if (aFile.exists() && !aFile.isDirectory()) {
 
+            // while the file still already exists, keep adding another number
+            // keeps iterating until the file name is valid
             while (aFile.exists()) {
                 fileNo++;
                 aFile = new File(filename.replace(".jpg", "_" + fileNo + ".jpg"));
                 newFileName = filename.replace(".jpg", "_" + fileNo + ".jpg");
             }
 
+        // else the file doesn't exist already
         } else if (!aFile.exists()) {
-            aFile.createNewFile();
-            newFileName = filename;
+            
+            // create the new file and filename
+            try {
+                aFile.createNewFile();
+                newFileName = filename;
+            } catch (IOException ex) {
+                System.err.println(ex);
+            }
         }
+        
+        // return the valid filename
         return newFileName;
-    }
+    } // end getNewFileName()
 
     /**
-     * Function to get the String version of the score Returns a blank if the
-     * score is 0
+     * Function to get the String version of the score 
+     * Returns a blank if the score is 0
      *
      * @param num, the number to parse
      * @return the string of the int
@@ -1721,8 +1617,8 @@ public class IntOutput {
      * Checks to see if there is a note field in the object. If there's nothing
      * there, return false, else return true
      *
-     * @param s
-     * @return
+     * @param s, the string to check
+     * @return boolean result
      */
     public boolean checkForNote(String s) {
         if (s == null) {
@@ -1750,7 +1646,7 @@ public class IntOutput {
         row.createCell(0).setCellValue(unit.getUnitNum());
         row.createCell(1).setCellValue(section);
         row.createCell(2).setCellValue(item);
-        row.createCell(3).setCellValue(note);
+        row.createCell(3).setCellValue(note.trim());
 
         // get the style
         CellStyle style = row.getCell(0).getCellStyle();
@@ -1770,7 +1666,15 @@ public class IntOutput {
         r++;
     } // end putNote()
 
+    /**
+     * Handles putting the photo into the "Photos" worksheet
+     * 
+     * @param unit
+     * @param picture
+     * @param file 
+     */
     public void putPhoto(Unit unit, Picture picture, File file) {
+        
         // get the row
         row = photos_sheet.createRow(r);
 
@@ -1808,5 +1712,5 @@ public class IntOutput {
         // update globals
         photoPut = true;
         r++;
-    }
-} // end IntOutput
+    } // end putPhoto()
+} // end IntOutput.java

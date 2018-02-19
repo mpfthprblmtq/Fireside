@@ -38,13 +38,12 @@ public class Utility {
     private String ceiling_type;
     private String wallsceiling_notes; 
     
-    private int sump_score;
-    private String sump_notes;
-    
     private int light_score;
     private String light_type;
     private String light_finish;
     private String light_notes;
+    
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -177,34 +176,6 @@ public class Utility {
      */
     public void setWallsceiling_notes(String wallsceiling_notes) {
         this.wallsceiling_notes = wallsceiling_notes;
-    }
-
-    /**
-     * @return the sump_score
-     */
-    public int getSump_score() {
-        return sump_score;
-    }
-
-    /**
-     * @param sump_score the sump_score to set
-     */
-    public void setSump_score(int sump_score) {
-        this.sump_score = sump_score;
-    }
-
-    /**
-     * @return the sump_notes
-     */
-    public String getSump_notes() {
-        return sump_notes;
-    }
-
-    /**
-     * @param sump_notes the sump_notes to set
-     */
-    public void setSump_notes(String sump_notes) {
-        this.sump_notes = sump_notes;
     }
 
     /**
@@ -346,4 +317,18 @@ public class Utility {
     public void setUtility_comments(String utility_comments) {
         this.utility_comments = utility_comments;
     }
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Utility.java

@@ -18,6 +18,7 @@ package parser;
 // class AsphaltConcrete
 public class AsphaltConcrete {
     
+    // ivars
     private int overlay_score;
     private String overlay_notes;
     
@@ -44,6 +45,8 @@ public class AsphaltConcrete {
     
     private int handicapparking_score;
     private String handicapparking_notes;
+    
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -303,8 +306,18 @@ public class AsphaltConcrete {
     public void setHandicapparking_notes(String handicapparking_notes) {
         this.handicapparking_notes = handicapparking_notes;
     }
-    
-    
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end AsphaltConcrete.java

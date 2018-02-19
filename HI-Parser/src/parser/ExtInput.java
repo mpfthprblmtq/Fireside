@@ -15,10 +15,12 @@
 // package
 package parser;
 
+// imports
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Set;
 import javax.swing.JFileChooser;
@@ -29,24 +31,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 // class ExtInput
 public class ExtInput {
-//    
-//    // constants
-//    private static int asphalt_SP;
-//    private static int building_exterior_SP;
-//    private static int dumpsters_SP;
-//    private static int fencing_SP;
-//    private static int interior_hallway_SP;
-//    private static int landscaping_SP;
-//    private static int main_supplies_SP;
-//    private static int signage_SP;
-//    
-//    // global
-//    private int count;
-//    
-//    // ivars
-//    private String[] data;
-//    private String[] headers;
     
+    // constants, used to get the specific column number on the big nasty 
+    // spreadsheet from Happy Inspector
+    private final int SECTION = 20;
+    private final int ITEM = 21;
     private final static int CEILING_TYPE = 22;
     private final static int DOOR_MATERIAL = 23;
     private final static int DOOR_TYPE = 24;
@@ -56,13 +45,13 @@ public class ExtInput {
     private final static int MATERIAL = 28;
     private final static int NUMBER = 29;
     private final static int R = 30;
-    private final static int STATUS = 31;
     private final static int TYPE = 32;
     private final static int WALLS_TYPE = 33;
     private final static int YES_NO = 34;
     private final static int NOTES = 35;
     private final static int PHOTOS = 36;
     
+    // ivars
     private Building building;
     
     // hashmap that contains all the buildings
@@ -72,9 +61,7 @@ public class ExtInput {
     InputStream fs;
     XSSFWorkbook wb;
     XSSFSheet sheet;
-    //XSSFSheet matrix_sheet;
     XSSFRow row;
-   // XSSFRow matrix_row;
     int rowNum;
 
     // variables for the filechooser
@@ -87,54 +74,14 @@ public class ExtInput {
     public ExtInput() {
         // empty
     }
-//
-//    /**
-//     * @return the data
-//     */
-//    public String[] getData() {
-//        return data;
-//    }
-//
-//    /**
-//     * @param data the data to set
-//     */
-//    public void setData(String[] data) {
-//        this.data = data;
-//    }
-
+    
     /**
-     * @return the building
+     * Set the err and out streams to the text file
+     * @param ps 
      */
-    public Building getBuilding() {
-        return building;
-    }
-
-    /**
-     * @param building the building to set
-     */
-    public void setBuilding(Building building) {
-        this.building = building;
-    }
-//    
-//    /**
-//     * @return the headers
-//     */
-//    public String[] getHeaders() {
-//        return headers;
-//    }
-//
-//    /**
-//     * @param headers the headers to set
-//     */
-//    public void setHeaders(String[] headers) {
-//        this.headers = headers;
-//    }
-
-    /**
-     * @return the buildings
-     */
-    public HashMap<String, Building> getBuildings() {
-        return buildings;
+    public void setOut(PrintStream ps) {
+        System.setErr(ps);
+        System.setOut(ps);
     }
 
     /**
@@ -142,6 +89,13 @@ public class ExtInput {
      */
     public void setBuildings(HashMap<String, Building> aBuildings) {
         buildings = aBuildings;
+    }
+
+    /**
+     * @return the buildings
+     */
+    public HashMap<String, Building> getBuildings() {
+        return buildings;
     }
     
     /**
@@ -168,8 +122,7 @@ public class ExtInput {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             file = fc.getSelectedFile();
         } else {
-            System.err.println("No file chosen.");
-            
+            // no file chosen
         }
 
         // read in the workbook, get inspection matrix sheet
@@ -177,11 +130,12 @@ public class ExtInput {
             fs = new FileInputStream(file);
             wb = new XSSFWorkbook(fs);
             sheet = wb.getSheetAt(0);
-            //matrix_sheet = wb.getSheetAt(0);
 
         } catch (IOException e) {
             // something went wrong
             System.err.println(e);
+        } catch (NullPointerException e) {
+            return null;
         }
         return file.getAbsolutePath();
     } // end openWorkbook() 
@@ -214,14 +168,12 @@ public class ExtInput {
             row = sheet.getRow(i);
             
             if(row.getCell(0).toString().equals(temp)) {
-                
+                // do nothing, continue
             } else {
-                
+                // get values
                 try {
-                
-                    // get values
                     String id = row.getCell(0).toString();
-                    String buildingName = row.getCell(10).toString();
+                    String buildingName = row.getCell(14).toString();
                     String street = row.getCell(13).toString();
                     String city = row.getCell(15).toString();
                     String state = row.getCell(16).toString();
@@ -236,15 +188,11 @@ public class ExtInput {
                     // nothing
                 }
             }
-            
-            
-
-            
         }
-    }
+    } // end initExterior()
     
     /**
-     * Function to import Buildings
+     * Function that traverses the whole sheet and fills values based on values
      */
     public void fillBuildings() {
         
@@ -263,7 +211,7 @@ public class ExtInput {
             section = row.getCell(20).toString();
             item = row.getCell(21).toString();
             
-            // switcheroo to find out what import
+            // <editor-fold desc="large switch to determine what to import" defaultstate="collapsed">
             switch(section) {
                 case "Interior Hallway":
                     switch (item) {
@@ -316,6 +264,11 @@ public class ExtInput {
                             building.interiorhallway.setHandicapaccessible(getData(YES_NO));
                             break;
                         default:
+                            if(building.interiorhallway.getUnaccounted_items() == null) {
+                                building.interiorhallway.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.interiorhallway.setUnaccounted_items("\n" + building.interiorhallway.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -335,6 +288,11 @@ public class ExtInput {
                             building.dumpsters.setBallasts_score(Integer.valueOf(getData(R)));
                             break;
                         default:
+                            if(building.dumpsters.getUnaccounted_items() == null) {
+                                building.dumpsters.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.dumpsters.setUnaccounted_items("\n" + building.dumpsters.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -376,6 +334,11 @@ public class ExtInput {
                             building.mainsupplies.setHvacshutoff_number(getData(NUMBER));
                             break;
                         default:
+                            if(building.mainsupplies.getUnaccounted_items() == null) {
+                                building.mainsupplies.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.mainsupplies.setUnaccounted_items("\n" + building.mainsupplies.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -426,6 +389,11 @@ public class ExtInput {
                             building.landscaping.setDogpark_fence_material(getData(MATERIAL));
                             break;
                         default:
+                            if(building.landscaping.getUnaccounted_items() == null) {
+                                building.landscaping.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.landscaping.setUnaccounted_items("\n" + building.landscaping.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -536,6 +504,11 @@ public class ExtInput {
                             building.buildingexterior.setExterioraccess_score(Integer.valueOf(getData(R)));
                             break;
                         default:
+                            if(building.buildingexterior.getUnaccounted_items() == null) {
+                                building.buildingexterior.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.buildingexterior.setUnaccounted_items("\n" + building.buildingexterior.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -569,6 +542,11 @@ public class ExtInput {
                             building.asphaltconcrete.setHandicapparking_score(Integer.valueOf(getData(R)));
                             break;
                         default:
+                            if(building.asphaltconcrete.getUnaccounted_items() == null) {
+                                building.asphaltconcrete.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.asphaltconcrete.setUnaccounted_items("\n" + building.asphaltconcrete.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -585,6 +563,11 @@ public class ExtInput {
                             building.fencing.setGates_score(Integer.valueOf(getData(R)));
                             break;
                         default:
+                            if(building.fencing.getUnaccounted_items() == null) {
+                                building.fencing.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.fencing.setUnaccounted_items("\n" + building.fencing.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
@@ -621,171 +604,106 @@ public class ExtInput {
                             building.signage.setFirelane_score(Integer.valueOf(getData(R)));
                             break;
                         default:
+                            if(building.signage.getUnaccounted_items() == null) {
+                                building.signage.setUnaccounted_items(parseRowIntoStringForItem());
+                            } else {
+                                building.signage.setUnaccounted_items("\n" + building.signage.getUnaccounted_items() + parseRowIntoStringForItem());
+                            }
                             break;
                     }
                     break;
+                default:
+                    fillExteriorNote(building, section, item, parseRowIntoStringForSection());
             }
+            // </editor-fold>
         }
         
-//        // start at row 2, column 15
-//        rowNum = 2;
-//        int column;
-//        
-//        // get max columns
-//        int MAX_COLUMNS = row.getLastCellNum() - 1 - 14;
-//        
-//        // get the header row
-//        headers = new String[MAX_COLUMNS];
-//        XSSFRow header_row = sheet.getRow(0);
-//        for (int i = 0; i < MAX_COLUMNS; i++) {
-//            headers[i] = header_row.getCell(i+15).toString();
-//        }
-//        
-//        // create a parser object
-//        ExtInput parser = new ExtInput();
-//        
-//        // set the headers
-//        parser.setHeaders(headers);
-//        
-//        // find the headers
-//        parser.findStartingPoints();
-//        
-//        // iterate through units to determine which import function to use
-//        //Set<String> keys = units.keySet();
-//        for(int i = 1; i <= getBuildings().size(); i++) {
-//            
-//            // instantiate the data array
-//            data = new String[MAX_COLUMNS];
-//            
-//            // fill with blank values
-//            for (int j = 0; j < MAX_COLUMNS; j++) {
-//                data[j] = "";
-//            }
-//            
-//            // get the row
-//            row = sheet.getRow(rowNum);
-//            
-//            // reset column
-//            column = 15;
-//                
-//            // fill the data array with values
-//            for (int j = 0; j < MAX_COLUMNS; j++) {
-//                
-//                // fill the array with data
-//                data[j] = getString(column);
-//                
-//                // next column
-//                column++;
-//                
-//            }
-//            
-//            String name = "building" + i;
-//            parser.setData(data);
-//            parser.setBuilding(getBuildings().get(name));
-//            parser.importBuilding();
-//            
-//            // move to the next row
-//            rowNum++;
-//        }
-        
         // NOTES
-        
-        int r = 1;
         building = null;
-        
         String note = "";
         
-        for(int i = 0; i < sheet.getLastRowNum(); i++) {
-            row = sheet.getRow(r);
+        for(int i = 1; i < sheet.getLastRowNum(); i++) {
+            row = sheet.getRow(i);
             String id = row.getCell(0).toString();
 
             Set<String> keys = getBuildings().keySet();
             for(String _key : keys) {
                 if(getBuildings().get(_key).getID().equals(id)) {
                     building = getBuildings().get(_key);
-                    
-                    section = row.getCell(20).toString();
-                    item = row.getCell(21).toString();
-                    
+                    section = row.getCell(SECTION).toString();
+                    item = row.getCell(ITEM).toString();
                     note = row.getCell(NOTES).toString();
                 }
             }
             fillExteriorNote(building, section, item, note);
-            r++;
         }
         
         // PICTURES
-        r = 1;
-        for (int i = 0; i < sheet.getLastRowNum(); i++) {
-            row = sheet.getRow(r);
+        for (int i = 1; i < sheet.getLastRowNum(); i++) {
+            row = sheet.getRow(i);
             String id = row.getCell(0).toString();
 
             Set<String> keys = getBuildings().keySet();
             for (String _key : keys) {
                 if (getBuildings().get(_key).getID().equals(id)) {
                     building = getBuildings().get(_key);
+                    section = row.getCell(SECTION).toString();
+                    item = row.getCell(ITEM).toString();
 
-                    section = row.getCell(20).toString();
-                    item = row.getCell(21).toString();
-
+                    // number of pictures
                     int counter = 0;
                     while (true) {
                         try {
-                                String url = row.getCell(PHOTOS + counter).toString();
-                                building.addPicture(section, item, url);
-                                counter++;
+                            String url = row.getCell(PHOTOS + counter).toString();
+                            building.addPicture(section, item, url);
+                            counter++;
                         } catch (NullPointerException ex) {
                             break;
                         }
                     }
                 }
             }
-            r++;
         }
+    } // end fillBuildings()
+    
+    /**
+     * Function that reads in a row and formats it into a string
+     * @return the formatted string
+     */
+    public String parseRowIntoStringForSection() {
+        
+        String str = row.getCell(SECTION).toString() + "/" + row.getCell(ITEM).toString() + ": ";
+        for (int i = 22; i < row.getLastCellNum(); i++) {
+            String cellData = getData(i);
+            if (!cellData.equals("")) {
+                XSSFRow tRow = sheet.getRow(0);
+                String header = tRow.getCell(i).toString();
+                str += " " + header + ": " + cellData + "\n";
+            }
+        }
+        str = str.substring(0, str.length() - 1);
+        return str;
+    }
+    
+    /**
+     * Function that reads in a row and formats it into a string
+     * @return the formatted string
+     */
+    public String parseRowIntoStringForItem() {
+        
+        String str = row.getCell(SECTION).toString() + "/" + row.getCell(ITEM).toString() + ": ";
+        for (int i = 22; i < row.getLastCellNum(); i++) {
+            String cellData = getData(i);
+            if (!cellData.equals("")) {
+                XSSFRow tRow = sheet.getRow(0);
+                String header = tRow.getCell(i).toString();
+                str += " " + header + ": " + cellData + ",";
+            }
+        }
+        str = str.substring(0, str.length() - 1);
+        return str;
     }
 
-//    /**
-//     * Function to find the starting points of each room
-//     */
-//    public void findStartingPoints() {
-//        for (int i = 0; i < headers.length; i++) {
-//            String temp = "";
-//            if (headers[i].equals(temp)) {
-//                // do nothing, continue
-//            } else {
-//                switch (headers[i]) {
-//                    case "Asphalt/Concrete":
-//                        asphalt_SP = i - 8;
-//                        break;
-//                    case "Building Exterior":
-//                        building_exterior_SP = i - 30;
-//                        break;
-//                    case "Dumpsters":
-//                        dumpsters_SP = i - 3;
-//                        break;
-//                    case "Fencing":
-//                        fencing_SP = i - 2;
-//                        break;
-//                    case "Interior Hallway":
-//                        interior_hallway_SP = i - 12;
-//                        break;
-//                    case "Landscaping":
-//                        landscaping_SP = i - 10;
-//                        break;
-//                    case "Main Supplies":
-//                        main_supplies_SP = i - 6;
-//                        break;
-//                    case "Signage":
-//                        signage_SP = i - 9;
-//                        break;
-//                    default:
-//                        System.err.println("Error in findStartingPoints()");
-//                        break;
-//                }
-//            }
-//        }
-//    }
-//    
     /**
      * Function that gets the individual note from fillUnits and puts it in its proper place.
      * Basically switches all over the place
@@ -1124,7 +1042,14 @@ public class ExtInput {
                 building.overall.setGeneral_comments(note);
                 break;
             default:
-                System.err.println("Unaccounted section/item in fillExteriorNote():  " + section + "/" + item);
+                //System.err.println("Unaccounted section/item in fillExteriorNote():  " + section + "/" + item);
+                //break;
+                
+                if(building.overall.getUnaccounted_sections()== null) {
+                    building.overall.setUnaccounted_sections(note);
+                } else {
+                    building.overall.setUnaccounted_sections(building.overall.getUnaccounted_sections() + note);
+                }
                 break;
         }
     }
@@ -1149,566 +1074,4 @@ public class ExtInput {
             }
         }
     } // end getData()
-    
-//    /**
-//     * Function to return data from cell
-//     * Tests for null to prevent NPE
-//     * @param col, the column of the row to return
-//     * @return the value of the cell
-//     */
-//    public String getString(int col) {
-//        if(row.getCell(col) == null) {
-//            return "";
-//        } else {
-//            return row.getCell(col).toString();
-//        }
-//    }
-    
-//    /**
-//     * Function that handles the importing
-//     */
-//    public void importBuilding() {
-//        
-//        // reset the counter
-//        count = 0;
-//        
-//        // do the import
-//        importInteriorHallway();
-//        importDumpsters();
-//        importMainSupplies();
-//        importLandscaping();
-//        importBuildingExterior();
-//        importAsphaltConcrete();
-//        importFencing();
-//        importSignage();
-//    }
-//    
-//    /**
-//     * Function to import the Interior Hallway portion
-//     */
-//    public void importInteriorHallway() {
-//        
-//        // start it at Interior Hallway
-//        count = interior_hallway_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // door hardware
-//        building.interiorhallway.setDoor_hardware_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // door knockers
-//        building.interiorhallway.setDoorknockers_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // doors
-//        building.interiorhallway.setDoors_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // fire extinguisher
-//        building.interiorhallway.setFire_extinguisher_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // floor
-//        building.interiorhallway.setFloor_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // handicap accessible
-//        building.interiorhallway.setHandicapaccessible_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // handrails
-//        building.interiorhallway.setHandrails_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // light fixtures
-//        building.interiorhallway.setLightfixture_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // moldings
-//        building.interiorhallway.setMoldings_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // smoke detectors
-//        building.interiorhallway.setSmoke_detectors_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // stairs
-//        building.interiorhallway.setStaircoverings_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // unit numbers on doors
-//        building.interiorhallway.setUnitnumbers_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // walls/ceiling
-//        building.interiorhallway.setWallsceilings_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Dumpsters portion
-//     */
-//    public void importDumpsters() {
-//        
-//        // start it at Dumpsters
-//        count = dumpsters_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // ballasts/bumpers
-//        building.dumpsters.setBallasts_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // fence pickets
-//        building.dumpsters.setFencepickets_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // gate holes in ground
-//        building.dumpsters.setGateholes_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//
-//        // gates
-//        building.dumpsters.setGates_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Main Supplies portion
-//     */
-//    public void importMainSupplies() {
-//        
-//        // start it at Main Supplies
-//        count = main_supplies_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // electric meter
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setElectricmeter_location(arr[0]);
-//        building.mainsupplies.setElectricmeter_number(arr[1]);
-//        building.mainsupplies.setElectricmeter_score(Integer.valueOf(arr[2]));
-//        count++;
-//        
-//        // fire hydrants
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setFirehydrants_location(arr[0]);
-//        building.mainsupplies.setFirehydrants_number(arr[1]);
-//        building.mainsupplies.setFirehydrants_score(Integer.valueOf(arr[2]));
-//        count++;
-//        
-//        // gas meter
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setGasmeter_location(arr[0]);
-//        building.mainsupplies.setGasmeter_number(arr[1]);
-//        building.mainsupplies.setGasmeter_score(Integer.valueOf(arr[2]));
-//        count++;
-//        
-//        // HVAC shutoff
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setHvacshutoff_location(arr[0]);
-//        building.mainsupplies.setHvacshutoff_number(arr[1]);
-//        building.mainsupplies.setHvacshutoff_score(Integer.valueOf(arr[2]));
-//        count++;
-//        
-//        // sewer cleanout
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setSewercleanout_location(arr[0]);
-//        building.mainsupplies.setSewercleanout_number(arr[1]);
-//        building.mainsupplies.setSewercleanout_score(Integer.valueOf(arr[2]));
-//        count++;
-//        
-//        // sump pumps
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setSumppumps_location(arr[0]);
-//        building.mainsupplies.setSumppumps_number(arr[1]);
-//        building.mainsupplies.setSumppumps_score(Integer.valueOf(arr[2]));
-//        count++;
-//        
-//        // water shutoff
-//        arr = getMainSupplies(data[count]);
-//        building.mainsupplies.setWatershutoff_location(arr[0]);
-//        building.mainsupplies.setWatershutoff_number(arr[1]);
-//        building.mainsupplies.setWatershutoff_score(Integer.valueOf(arr[2]));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Landscaping portion
-//     */
-//    public void importLandscaping() {
-//        
-//        // start it at landscaping
-//        count = landscaping_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // bushes
-//        building.landscaping.setBushes_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // debris
-//        building.landscaping.setDebris_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // drainage
-//        building.landscaping.setDrainage_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // irrigation
-//        building.landscaping.setIrrigation_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // lighting
-//        building.landscaping.setLighting_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // mulch/gravel
-//        building.landscaping.setMulchgravel_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // picnic/sitting area
-//        building.landscaping.setPicnicarea_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // retaining walls
-//        building.landscaping.setRetainingwalls_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // trees
-//        building.landscaping.setTrees_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // water pooling
-//        building.landscaping.setWaterpooling_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // weeds
-//        building.landscaping.setWeeds_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Building Exterior portion
-//     */
-//    public void importBuildingExterior() {
-//        
-//        // start it at Building Exterior
-//        count = building_exterior_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // brickwork
-//        building.buildingexterior.setBrickwork_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // debris on roof
-//        building.buildingexterior.setDebris_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // deck flashing
-//        building.buildingexterior.setDeckflashing_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // decks
-//        building.buildingexterior.setDecks_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // door hardware
-//        building.buildingexterior.setDoorhardware_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // doors
-//        building.buildingexterior.setDoors_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // down spouts
-//        building.buildingexterior.setDownspouts_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // exposed wiring/cables
-//        building.buildingexterior.setExposedwiring_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // exterior access
-//        building.buildingexterior.setExterioraccess_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // exterior unit numbers
-//        building.buildingexterior.setExteriorunitnumbers_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // fascia
-//        building.buildingexterior.setFascia_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // foundation cracks
-//        building.buildingexterior.setFoundationcracks_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // foundation leaks
-//        building.buildingexterior.setFoundationleaks_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // gutter drains on roofs
-//        building.buildingexterior.setGutterdrains_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // gutters
-//        building.buildingexterior.setGutters_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // HVAC/AC
-//        building.buildingexterior.setHvac_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // handicap accessible
-//        building.buildingexterior.setHandicapaccessible_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // handrails
-//        building.buildingexterior.setHandrails_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // lighting
-//        building.buildingexterior.setLighting_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // mailbox
-//        building.buildingexterior.setMailbox_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // porch posts
-//        building.buildingexterior.setPorchposts_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // roofs
-//        building.buildingexterior.setRoofs_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // satellites
-//        building.buildingexterior.setSatellites_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // siding/stucco
-//        building.buildingexterior.setSiding_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // soffit
-//        building.buildingexterior.setSoffit_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // stairs
-//        building.buildingexterior.setStairs_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // termites
-//        building.buildingexterior.setTermites_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // vent pipes and caging
-//        building.buildingexterior.setVentpipescaging_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // window weather stripping
-//        building.buildingexterior.setWindowweatherstripping_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // window wells
-//        building.buildingexterior.setWindowwells_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // windows
-//        building.buildingexterior.setWindows_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Asphalt/Concrete portion
-//     */
-//    public void importAsphaltConcrete() {
-//        
-//        // start it at asphalt/concrete
-//        count = asphalt_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // crack fillings
-//        building.asphaltconcrete.setCrackfillings_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // handicap parking
-//        building.asphaltconcrete.setHandicapparking_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // overlay
-//        building.asphaltconcrete.setOverlay_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // parking bumpers
-//        building.asphaltconcrete.setParkingbumpers_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // potholes
-//        building.asphaltconcrete.setPotholes_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // sealing
-//        building.asphaltconcrete.setSealing_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // sidewalks
-//        building.asphaltconcrete.setSidewalks_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // striping
-//        building.asphaltconcrete.setStriping_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // trip hazards
-//        building.asphaltconcrete.setTriphazards_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Fencing portion
-//     */
-//    public void importFencing() {
-//        
-//        // start it at Fencing
-//        count = fencing_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // fence pickets
-//        building.fencing.setFencepickets_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // gates
-//        building.fencing.setGates_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // locks/latches
-//        building.fencing.setLockslatches_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to import the Signage portion
-//     */
-//    public void importSignage() {
-//        
-//        // start it at signage
-//        count = signage_SP;
-//        
-//        // make an array
-//        String[] arr;
-//        
-//        // ada marking
-//        building.signage.setAdamarking_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // dog park
-//        building.signage.setDogpark_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // dumpster
-//        building.signage.setDumpster_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // entrance
-//        building.signage.setEntrance_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // fire lane
-//        building.signage.setFirelane_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // handicap
-//        building.signage.setHandicapparking_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // office
-//        building.signage.setOffice_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // parking
-//        building.signage.setParking_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // pool
-//        building.signage.setPool_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//        
-//        // street
-//        building.signage.setStreet_score(Integer.valueOf(getStandard(data[count])));
-//        count++;
-//    }
-//    
-//    /**
-//     * Function to return standard score
-//     * @param s
-//     * @return 
-//     */
-//    public String getStandard(String s) {
-//        if (s.equals("")) {
-//            return "";
-//        } else {
-//            return s.substring(3);
-//        }
-//    }
-//    
-//    /**
-//     * Function to return main supplies (score, location and number)
-//     * @param s
-//     * @return 
-//     */
-//    public String[] getMainSupplies(String s) {
-//        String[] arr = new String[3];
-//        arr[0] = "";
-//        arr[1] = "";
-//        arr[2] = "0";
-//        String[] sarr = s.split(", ");
-//        
-//        if (s.contains("Location") && s.contains("Number") && s.contains("R:")) {
-//            arr[0] = sarr[0].substring(10);
-//            arr[1] = sarr[1].substring(8);
-//            arr[2] = sarr[2].substring(3);
-//        } else if (s.contains("Location") && s.contains("Number") && !s.contains("R:")) {
-//            arr[0] = sarr[0].substring(10);
-//            arr[1] = sarr[1].substring(8);
-//            arr[2] = "0";
-//        } else if (s.contains("Location") && !s.contains("Number") && s.contains("R:")) {
-//            arr[0] = sarr[0].substring(10);
-//            arr[1] = "";
-//            arr[2] = sarr[1].substring(3);
-//        } else if (!s.contains("Location") && s.contains("Number") && s.contains("R:")) {
-//            arr[0] = "";
-//            arr[1] = sarr[0].substring(8);
-//            arr[2] = sarr[1].substring(3);
-//        } else if (s.contains("Location") && !s.contains("Number") && !s.contains("R:")) {
-//            arr[0] = sarr[0].substring(10);
-//            arr[1] = "";
-//            arr[2] = "0";
-//        } else if (!s.contains("Location") && s.contains("Number") && !s.contains("R:")) {
-//            arr[0] = "";
-//            arr[1] = sarr[0].substring(8);
-//            arr[2] = "0";
-//        } else if (!s.contains("Location") && !s.contains("Number") && s.contains("R:")) {
-//            arr[0] = "";
-//            arr[1] = "";
-//            arr[2] = sarr[0].substring(3);
-//        } else {
-//            // do nothing
-//        }
-//
-//        return arr;
-//    }
-}
+} // end ExtInput.java

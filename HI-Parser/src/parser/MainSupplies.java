@@ -54,6 +54,8 @@ public class MainSupplies {
     private String hvacshutoff_number;
     private String hvacshutoff_notes;
     
+    private String unaccounted_items;
+    
     /**
      * Default constructor
      */
@@ -452,6 +454,18 @@ public class MainSupplies {
     public void setHvacshutoff_number(String hvacshutoff_number) {
         this.hvacshutoff_number = hvacshutoff_number;
     }
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end MainSupplies.java

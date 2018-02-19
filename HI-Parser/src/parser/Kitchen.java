@@ -55,7 +55,6 @@ public class Kitchen {
     
     private int sink_score;
     private String sink_type;
-    private String sink_material;
     private String sink_notes;
     
     private int countertops_score;
@@ -75,6 +74,8 @@ public class Kitchen {
     private String pantry_door_variety;
     private String pantry_door_material;
     private String pantry_notes;
+    
+    private String unaccounted_items;
     
     /**
      * Empty constructor
@@ -616,20 +617,6 @@ public class Kitchen {
     }
 
     /**
-     * @return the sink_material
-     */
-    public String getSink_material() {
-        return sink_material;
-    }
-
-    /**
-     * @param sink_material the sink_material to set
-     */
-    public void setSink_material(String sink_material) {
-        this.sink_material = sink_material;
-    }
-
-    /**
      * @return the pantry_door_material
      */
     public String getPantry_door_material() {
@@ -712,4 +699,18 @@ public class Kitchen {
     public void setKitchen_comments(String kitchen_comments) {
         this.kitchen_comments = kitchen_comments;
     }
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Kitchen.java

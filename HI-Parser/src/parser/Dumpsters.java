@@ -18,6 +18,7 @@ package parser;
 // class Dumpsters
 public class Dumpsters {
     
+    // ivars
     private int fencepickets_score;
     private String fencepickets_material;
     private String fencepickets_notes;
@@ -30,6 +31,8 @@ public class Dumpsters {
     
     private int ballasts_score;
     private String ballasts_notes;
+    
+    private String unaccounted_items;
     
     /**
      * Default constructor
@@ -163,7 +166,18 @@ public class Dumpsters {
     public void setGateholes_notes(String gateholes_notes) {
         this.gateholes_notes = gateholes_notes;
     }
-    
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end Dumpsters.java

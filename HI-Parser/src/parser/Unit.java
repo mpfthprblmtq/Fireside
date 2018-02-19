@@ -21,10 +21,14 @@ import java.util.ArrayList;
 // class Unit
 public class Unit {
     
+    // picture subclass, with standard getters and setters
+    // used for exporting pictures with the URL and details
     public class Picture {
+        // ivars
         private String url;
         private String section;
         private String item;
+        // constructors
         public Picture(String section, String item, String url) {
             this.url = url;
             this.section = section;
@@ -52,7 +56,7 @@ public class Unit {
         public String toString() {
             return section + " - " + item + ": " + url;
         }
-    }
+    } // end picture subclass
     
     // ivars
     private String id;
@@ -67,7 +71,7 @@ public class Unit {
     private ArrayList<Picture> pictures;
     private int rows;
     
-    // room variables
+    // room ivars
     Bedroom bedroom1;
     Bedroom bedroom2;
     Bedroom bedroom3;
@@ -105,15 +109,8 @@ public class Unit {
         this.building = building;
         this.notes = notes;
         this.pictures = new ArrayList<>();
-        createRooms();
-    }
-    
-    /**
-     * Function to create the rooms based on a floorplan
-     */
-    private void createRooms() {
         
-        // create common rooms
+        // create the rooms
         kitchen = new Kitchen();
         mechanical = new Mechanical();
         utility = new Utility();
@@ -296,11 +293,10 @@ public class Unit {
     }
 
     /**
-     * toString() used for debugging purposes
-     * @return the object in string form
+     * @return the String representation of the object
      */
     @Override
     public String toString() {
         return "Unit{" + "id=" + id + ", street=" + street + ", unitNum=" + unitNum + ", city=" + city + ", state=" + state + ", zip=" + zip + ", floorPlan=" + floorPlan + ", building=" + building + ", notes=" + notes + '}';
     }
-}
+} // end Unit.java

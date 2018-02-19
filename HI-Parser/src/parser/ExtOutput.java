@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -76,8 +77,8 @@ public class ExtOutput {
     int r;
 
     /**
-     * Empty constructor
-     * @param folderPath
+     * Default constructor
+     * @param folderPath, the path to send the files to
      */
     public ExtOutput(String folderPath) {
         this.folderPath = folderPath + "\\Exterior\\";
@@ -85,9 +86,18 @@ public class ExtOutput {
         this.capexOutputPath = this.folderPath + "Exterior CapEx Report.xlsx";
         this.imagesPath = this.folderPath + "\\Images";
     }
+    
+    /**
+     * Set the err and out streams to the text file
+     * @param ps 
+     */
+    public void setOut(PrintStream ps) {
+        System.setErr(ps);
+        System.setOut(ps);
+    }
 
     /**
-     * @return the units
+     * @return the buildings
      */
     public Map<String, Building> getBuildlings() {
         return buildings;
@@ -101,14 +111,14 @@ public class ExtOutput {
     }
     
     /**
-     * @return the buildings
+     * @return the Consolidated Exterior spreadsheet
      */
     public File getConsolidatedFile() {
         return new File(consolidatedOutputPath);
     }
     
     /**
-     * @return the buildings
+     * @return the Exterior CapEx spreadsheet
      */
     public File getCapExFile() {
         return new File(capexOutputPath);
@@ -118,68 +128,91 @@ public class ExtOutput {
      * Function that controls the output of all the data
      */
     public void outputData() {
-        
+
+        // make the sheets and get the workbook
+        try {
+            fs = new FileInputStream(file);
+            wb = new XSSFWorkbook(fs);
+            scores_sheet = wb.getSheet("Scores");
+            details_sheet = wb.getSheet("Details");
+            notes_sheet = wb.getSheet("Notes");
+            photos_sheet = wb.getSheet("Photos");
+
+        } catch (IOException e) {
+            // something went wrong
+            System.err.println(e);
+        }
+
+        // secondary functions to do the individual tasks
+        outputScores();
+        outputDetails();
+        outputNotes();
+        outputPhotos();
+
+        // close the sheet
+        try {
+            fs.close();
+        } catch (IOException ex) {
+            System.err.println(ex);
+        }
+
+        // create the new directory
+        File output = new File(folderPath);
+        output.mkdirs();
+
+        // write all of this to the new file
+        try (FileOutputStream outFile = new FileOutputStream(consolidatedOutputPath)) {
+            wb.write(outFile);
+
+        // thing(s) went wrong
+        } catch (FileNotFoundException ex) {
+            System.err.println(ex);
+        } catch (IOException ex) {
+            System.err.println(ex);
+        }
+    } // end outputData()
+    
+    /**
+     * Function that controls the output of all the capex data
+     */
+    public void outputCapEx() {
+
         // try with all your might
         try {
 
             // make the sheets and get the workbook
             try {
-                fs = new FileInputStream(file);
-                wb = new XSSFWorkbook(fs);
-                scores_sheet = wb.getSheet("Scores");
-                details_sheet = wb.getSheet("Details");
-                notes_sheet = wb.getSheet("Notes");
-                photos_sheet = wb.getSheet("Photos");
+                fs_ce = new FileInputStream(fileCE);
+                wb_ce = new XSSFWorkbook(fs_ce);
+                scores_sheet_ce = wb_ce.getSheet("Scores");
 
             } catch (IOException e) {
                 // something went wrong
                 System.err.println(e);
             }
 
-            outputScores();
-            outputDetails();
-            outputNotes();
-            outputPhotos();
+            // output the scores
+            outputScoresForCapEx();
 
             // close the sheet
             try {
-                fs.close();
+                fs_ce.close();
             } catch (IOException ex) {
                 System.err.println(ex);
             }
 
-            // create the new directory
-            File output = new File(folderPath);
-            output.mkdirs();
-            
             // write all of this to the new file
-            try (FileOutputStream outFile = new FileOutputStream(consolidatedOutputPath)) {
-                wb.write(outFile);
+            try (FileOutputStream outFile = new FileOutputStream(capexOutputPath)) {
+                wb_ce.write(outFile);
             }
 
-            // thing(s) went wrong
+        // thing(s) went wrong
         } catch (FileNotFoundException ex) {
             System.err.println(ex);
         } catch (IOException ex) {
             System.err.println(ex);
-        } finally {
-
         }
-    } // end outputData()
-    
-    /**
-     * Helper function used to recursively delete files in the images folder
-     * to avoid duplicates
-     * @param f
-     * @throws FileNotFoundException 
-     */
-    public void delete(File f) throws FileNotFoundException {
-        if (f.isDirectory()) {
-            for (File c : f.listFiles()) {
-                delete(c);
-            }
-        }
-    }
+    } // end outputCapEx()
 
     /**
      * Outputs the scores to the Scores worksheet
@@ -204,6 +237,7 @@ public class ExtOutput {
             // This huge block of code basically uses getNum to put the scores
             // into the specified spots in the sheet
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
+            
             // interior hallway
             row.getCell(2).setCellValue(getNum(buildings.get(key).interiorhallway.getFloor_score()));
             row.getCell(3).setCellValue(getNum(buildings.get(key).interiorhallway.getDoors_score()));
@@ -311,59 +345,19 @@ public class ExtOutput {
             row.getCell(91).setCellValue(getNum(buildings.get(key).signage.getFirelane_score()));
 
             // </editor-fold>
+            
             // update global
             r++;
         }
-
     } // end outputScores()
     
     /**
-     * Function that controls the output of all the data
+     * Outputs the scores to the Scores worksheet
      */
-    public void outputCapEx() {
-
-        // try with all your might
-        try {
-
-            // make the sheets and get the workbook
-            try {
-                fs_ce = new FileInputStream(fileCE);
-                wb_ce = new XSSFWorkbook(fs_ce);
-                scores_sheet_ce = wb_ce.getSheet("Scores");
-
-            } catch (IOException e) {
-                // something went wrong
-                System.err.println(e);
-            }
-
-            outputScoresForCapEx();
-
-            // close the sheet
-            try {
-                fs_ce.close();
-            } catch (IOException ex) {
-                System.err.println(ex);
-            }
-
-            // write all of this to the new file
-            try (FileOutputStream outFile = new FileOutputStream(capexOutputPath)) {
-                wb_ce.write(outFile);
-            }
-
-            // thing(s) went wrong
-        } catch (FileNotFoundException ex) {
-            System.err.println(ex);
-        } catch (IOException ex) {
-            System.err.println(ex);
-        } finally {
-
-        }
-    } // end outputData()
-    
     public void outputScoresForCapEx() {
 
         // update global starting point
-        r = 7;
+        r = 4;
 
         // create a set of keys and parse through the units
         Set<String> keys = buildings.keySet();
@@ -379,6 +373,7 @@ public class ExtOutput {
 
             // This huge block of code basically uses getNum to put the scores
             // into the specified spots in the sheet
+            
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
             
             // entry
@@ -488,13 +483,10 @@ public class ExtOutput {
             row_ce.getCell(91).setCellValue(getNum(buildings.get(key).signage.getFirelane_score()));
 
             // </editor-fold>
+            
             // update global
             r++;
         }
-        
-        // do the formula calculation
-            //XSSFFormulaEvaluator.evaluateAllFormulaCells(wb);
-        
     } // end outputScores()
 
     /**
@@ -515,6 +507,8 @@ public class ExtOutput {
 
             // This huge block of code basically just puts the values of the
             // locations and number fields in the specified cells in the sheet
+            
+            // <editor-fold desc="huge block of code" defaultstate="collapsed">
             
             // interior hallway
             row.getCell(2).setCellValue(buildings.get(key).interiorhallway.getFloor_type());
@@ -563,6 +557,8 @@ public class ExtOutput {
             row.getCell(35).setCellValue(buildings.get(key).mainsupplies.getHvacshutoff_location());
             row.getCell(36).setCellValue(buildings.get(key).mainsupplies.getHvacshutoff_number());
             
+            // </editor-fold>
+            
             // update global
             r++;
         }
@@ -588,6 +584,7 @@ public class ExtOutput {
             // This huge block of code basically just checks to see if there's a
             // note in the field
             // If there is, put it in, else skip it
+            
             // <editor-fold desc="huge block of code" defaultstate="collapsed">
             
             // interior hallway
@@ -955,6 +952,10 @@ public class ExtOutput {
                 putNote(building, "Overall", "General Comments", building.overall.getGeneral_comments());
             }
             
+            if (checkForNote(building.overall.getUnaccounted_sections())) {
+                putNote (building, "Overall", "Unaccounted Sections", building.overall.getUnaccounted_sections());
+            }
+            
             // </editor-fold>
 
             // update global
@@ -965,9 +966,11 @@ public class ExtOutput {
     } // end outputNotes()
     
     /**
-     * Function that exports the photos from the links and downloads them
+     * Function to outputs the photos based on a link
+     * Downloads a local file and provides a web link to the file
      */
     public void outputPhotos() {
+        
         // make some variables
         Building building;
         r = 2;
@@ -992,8 +995,8 @@ public class ExtOutput {
                     File newDir = new File(imagesPath + "\\" + building.getName());
                     newDir.mkdirs();
 
+                    // actually do the picture creation
                     try {
-                        
                         // get the url from the pic object and prepare the buffered image stream
                         url = new URL(pic.getUrl());
                         BufferedImage img = ImageIO.read(url);
@@ -1020,38 +1023,53 @@ public class ExtOutput {
                 }
             }
         }
-    }
+    } // end outputPhotos()
     
     /**
      * Helper function to read existing files and check for duplicates
      * Shamelessly stolen from StackOverflow
      * 
      * @param filename
-     * @return
-     * @throws IOException 
+     * @return the new filename 
      */
-    public String getNewFileName(String filename) throws IOException {
+    public String getNewFileName(String filename) {
+        
+        // create some variables
         File aFile = new File(filename);
         int fileNo = 0;
         String newFileName = "";
+        
+        // if the file exists and it's not a directory
         if (aFile.exists() && !aFile.isDirectory()) {
 
+            // while the file still already exists, keep adding another number
+            // keeps iterating until the file name is valid
             while (aFile.exists()) {
                 fileNo++;
                 aFile = new File(filename.replace(".jpg", "_" + fileNo + ".jpg"));
                 newFileName = filename.replace(".jpg", "_" + fileNo + ".jpg");
             }
 
+        // else the file doesn't exist already
         } else if (!aFile.exists()) {
-            aFile.createNewFile();
-            newFileName = filename;
+            
+            // create the new file and filename
+            try {
+                aFile.createNewFile();
+                newFileName = filename;
+            } catch (IOException ex) {
+                System.err.println(ex);
+            }
         }
+        
+        // return the valid filename
         return newFileName;
-    }
+    } // end getNewFileName()
 
     /**
-     * Function to get the String version of the score Returns a blank if the
-     * score is 0
+     * Function to get the String version of the score 
+     * Returns a blank if the score is 0
+     * 
      * @param num, the number to parse
      * @return the string of the int
      */
@@ -1066,8 +1084,9 @@ public class ExtOutput {
     /**
      * Checks to see if there is a note field in the object.  If there's nothing there,
      * return false, else return true
-     * @param s
-     * @return 
+     * 
+     * @param s, the string to check
+     * @return boolean result
      */
     public boolean checkForNote(String s) {
         if (s == null) {
@@ -1080,6 +1099,7 @@ public class ExtOutput {
     /**
      * Handles putting the note into the "Notes" worksheet, and also handles
      * the formatting of new cell (calibri 12, center formatting, etc)
+     * 
      * @param building
      * @param section
      * @param item
@@ -1114,7 +1134,15 @@ public class ExtOutput {
         r++;
     } // end putNote()
     
+    /**
+     * Handles putting the photo into the "Photos" worksheet
+     * 
+     * @param building
+     * @param picture
+     * @param file 
+     */
     public void putPhoto(Building building, Building.Picture picture, File file) {
+        
         // get the row
         row = photos_sheet.createRow(r);
 
@@ -1152,5 +1180,5 @@ public class ExtOutput {
         // update globals
         photoPut = true;
         r++;
-    }
-} // end ExtOutput
+    } // end putPhoto()
+} // end ExtOutput.java

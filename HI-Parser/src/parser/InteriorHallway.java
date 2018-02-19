@@ -67,6 +67,8 @@ public class InteriorHallway {
     private String handicapaccessible;
     private String handicapaccessible_notes;
     
+    private String unaccounted_items;
+    
     /**
      * Default constructor
      */
@@ -563,7 +565,18 @@ public class InteriorHallway {
     public void setStaircoverings_type(String staircoverings_type) {
         this.staircoverings_type = staircoverings_type;
     }
-    
-    
-    
-}
+
+    /**
+     * @return the unaccounted_items
+     */
+    public String getUnaccounted_items() {
+        return unaccounted_items;
+    }
+
+    /**
+     * @param unaccounted_items the unaccounted_items to set
+     */
+    public void setUnaccounted_items(String unaccounted_items) {
+        this.unaccounted_items = unaccounted_items;
+    }
+} // end InteriorHallway.java
