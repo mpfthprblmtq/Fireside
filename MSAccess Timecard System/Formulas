@@ -1,0 +1,16 @@
+# Formulas for Payroll Report
+
+# PTO
+=Sum(IIf([Work Code]=39 And [Date Worked] Between [Forms]![Custom Query Form].[PayPeriodStart] And [Forms]![Custom Query Form].[PayPeriodEnd],[Hours],0))
+
+# Holiday
+=Sum(IIf([Work Code]=51 And [Date Worked] Between [Forms]![Custom Query Form].[PayPeriodStart] And [Forms]![Custom Query Form].[PayPeriodEnd],[Hours],0))
+
+# Regular
+=Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[PayPeriodStart] And [Forms]![Custom Query Form].[PayPeriodEnd],[Hours],0))-(Sum(IIf([Work Code]=39 And [Date Worked] Between [Forms]![Custom Query Form].[PayPeriodStart] And [Forms]![Custom Query Form].[PayPeriodEnd],[Hours],0))+Sum(IIf([Work Code]=51 And [Date Worked] Between [Forms]![Custom Query Form].[PayPeriodStart] And [Forms]![Custom Query Form].[PayPeriodEnd],[Hours],0)) + (IIf((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek1Start] And [Forms]![Custom Query Form].[dispWorkWeek1End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)>0,((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek1Start] And [Forms]![Custom Query Form].[dispWorkWeek1End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)),0)) + (IIf((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek2Start] And [Forms]![Custom Query Form].[dispWorkWeek2End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)>0,((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek2Start] And [Forms]![Custom Query Form].[dispWorkWeek2End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)),0)))
+
+# Overtime
+=(IIf((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek1Start] And [Forms]![Custom Query Form].[dispWorkWeek1End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)>0,((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek1Start] And [Forms]![Custom Query Form].[dispWorkWeek1End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)),0)) + (IIf((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek2Start] And [Forms]![Custom Query Form].[dispWorkWeek2End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)>0,((Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[dispWorkWeek2Start] And [Forms]![Custom Query Form].[dispWorkWeek2End] And [Work Code] <> 39 And [Work Code] <> 51,[Hours],0))-40)),0))
+
+# Total
+=Sum(IIf([Date Worked] Between [Forms]![Custom Query Form].[PayPeriodStart] And [Forms]![Custom Query Form].[PayPeriodEnd],[Hours],0))

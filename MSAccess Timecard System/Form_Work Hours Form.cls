@@ -9,39 +9,49 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Compare Database
 
-'What happens when you click the addButton
-'Also is called when Enter key is pressed
+' What happens when the add button is clicked
 Private Sub addButton_Click()
-
     'there are two options, adding and editing
     'check caption of addButton to see which we are doing
     
     'if button says add, do add functionality
     If Me.addButton.Caption & "" = "Add" Then
     
-        'check if work description is null
+        ' check if work description is null, set it to a blank value if null
+        ' if you use "", it won't add for some reason
         If IsNull(Me.Work_Description) Then
         
-            Me.Work_Description.Value = ""
+            Me.Work_Description.Value = " "
             
         End If
 
         'build add query
-        Query = "INSERT INTO [Work Hours] ([Employee], [Date Worked], [Property/Company], [Work Code], [Hours], [Work Description]) " & _
-        "VALUES ('" & Me.Employee & "','" & Me.Date_Worked & "','" & Me.Property_Company & "','" & Me.Work_Code & "','" & Me.Hours & "','" & Replace(Me.Work_Description, "'", "''") & "')"
+        Query = "INSERT INTO [Work Hours] ([Employee], [Date Worked], [Hours], [Department], [Work Code], [Company], [Project], [Work Description], [Created]) " & _
+            "VALUES ('" & Me.Employee & _
+            "','" & Me.Date_Worked & _
+            "','" & Me.Hours & _
+            "','" & Me.Department & _
+            "','" & Me.Work_Code & _
+            "','" & Me.Company & _
+            "','" & Me.Project & _
+            "','" & Replace(Me.Work_Description, "'", "''") & _
+            "',#" & Now & "#)"
         
     'button wasn't add, it was update
     Else
         
         'build update query
-        Query = "UPDATE [Work Hours]" & _
-            " SET [Employee]='" & Me.Employee & _
-            "', [Date Worked]='" & Me.Date_Worked & _
-            "', [Property/Company]='" & Me.Property_Company & _
-            "', [Work Code]='" & Me.Work_Code & _
+        Query = "UPDATE [Work Hours] " & _
+            "SET [Employee]='" & Me.Employee & _
             "', [Hours]='" & Me.Hours & _
+            "', [Date Worked]='" & Me.Date_Worked & _
+            "', [Department]='" & Me.Department & _
+            "', [Work Code]='" & Me.Work_Code & _
+            "', [Company]='" & Me.Company & _
+            "', [Project]='" & Me.Project & _
             "', [Work Description]='" & Replace(Me.Work_Description, "'", "''") & _
-            "' WHERE ID=" & Me.ID.Tag
+            "', [Last Modified]=#" & Now & _
+            "# WHERE ID=" & Me.ID.Tag
             
     End If
     
@@ -72,9 +82,11 @@ Private Sub clearButton_Click()
     Me.ID = ""
     Me.Employee = ""
     Me.Date_Worked = ""
-    Me.Property_Company = ""
     Me.Work_Code = ""
     Me.Hours = ""
+    Me.Department = ""
+    Me.Company = ""
+    Me.Project = ""
     Me.Work_Description = ""
     
     'focus on employee
@@ -102,6 +114,23 @@ Private Sub closeButton_Click()
     
 End Sub
 
+' What happens when the company is changed
+Private Sub Company_Change()
+
+    ' Sets the row source based on the company selected
+    Me.Department.RowSource = "SELECT Departments.ID, Departments.Description FROM Departments WHERE Departments.Active = -1 AND Departments.[" & Me.Company.Column(1) & "] = -1 ORDER BY Departments.Description"
+
+End Sub
+
+' What happens when the department is changed
+' Sets the row source based on the department selected
+Private Sub Department_Change()
+    
+    ' use the string in the combo box to find the column and whether it's active or not
+    Me.Work_Code.RowSource = "SELECT [Work Codes].ID, [Work Codes].Description FROM [Work Codes] WHERE [Work Codes].Active = -1 AND [Work Codes].[" & Me.Department.Column(1) & "]=-1 ORDER BY [Work Codes].Description"
+    
+End Sub
+
 'What happens when Date_Worked field gets the focus
 'Basically, if it's blank, put today's date in it
 'If it's not blank, leave it the way it is
@@ -117,12 +146,49 @@ Private Sub Date_Worked_GotFocus()
     
 End Sub
 
+' What happens when the form is loaded
+' Basically just resets the form
+Private Sub Form_Load()
+
+    'change caption add button to add
+    Me.addButton.Caption = "Add"
+    
+    'enable edit button
+    Me.editButton.Enabled = True
+    
+    'change caption clear button to clear
+    Me.clearButton.Caption = "Clear"
+    
+    'get id of currently logged in user and set the employee dropdown
+    Dim rst As DAO.Recordset
+    Dim eid As Integer
+    Dim strSQL As String
+    strSQL = "SELECT ID FROM Employees WHERE [Full Name]='" & GetUserFullName() & "'"
+    Set rst = CurrentDb.OpenRecordset(strSQL)
+    eid = rst!ID
+    
+    ' set the value of the query
+    Me.Employee.Value = eid
+    
+End Sub
+
+' This function returns the full name of the currently logged in user
+' Shamelessly stolen from StackOverflow
+Function GetUserFullName() As String
+    Dim WSHnet, UserName, UserDomain, objUser
+    Set WSHnet = CreateObject("WScript.Network")
+    UserName = WSHnet.UserName
+    UserDomain = WSHnet.UserDomain
+    Set objUser = GetObject("WinNT://" & UserDomain & "/" & UserName & ",user")
+    GetUserFullName = objUser.FullName
+End Function
+
 'What happens when Hours field gets the focus
 'Basically, if it's blank, put 15 minutes (0.25) in it
 'If it's not blank, leave it the way it is
 Private Sub Hours_GotFocus()
 
-    'if date worked is blank, set it to today's date, else do nothing
+    'if hours is blank, set it to 0.25 (15 minutes), else do nothing
     If Me.Hours & "" = "" Then
 
         'set the date
@@ -132,8 +198,8 @@ Private Sub Hours_GotFocus()
     
 End Sub
 
-'What happens when deleteButton is clicked
-'Has a password system so that user won't be able to delete past records
+' What happens when deleteButton is clicked
+' Has a password system so that user won't be able to delete past records
 Private Sub deleteButton_Click()
     
     'with statement that refers to the subform
@@ -143,11 +209,12 @@ Private Sub deleteButton_Click()
         If Not CDate(.Fields("Date Worked")) = Date Then
         
             'input password
-            Dim pass As String
-            pass = InputBox("Cannot delete past records without administrator approval.  Enter password to delete record:", "Enter Password")
+            Dim pass As Integer
+            'pass = InputBox("Cannot delete past records without administrator approval.  Enter password to delete record:", "Enter Password")
+            pass = Authenticate()
             
             'if password was entered correctly
-            If pass = "fire" Then
+            If pass = 1 Then
                 
                 'check if the record exists
                 If Not (Me.Work_Hours_subform.Form.Recordset.EOF And Me.Work_Hours_subform.Form.Recordset.BOF) Then
@@ -225,8 +292,8 @@ Private Sub deleteButton_Click()
     
 End Sub
 
-'What happens when editButton is clicked
-'Has a password system so that user won't be able to edit past records
+' What happens when editButton is clicked
+' Has a password system so that user won't be able to edit past records
 Private Sub editButton_Click()
 
     'with statement that refers to the subform
@@ -236,11 +303,11 @@ Private Sub editButton_Click()
         If Not CDate(.Fields("Date Worked")) = Date Then
         
             'input password
-            Dim pass As String
-            pass = InputBox("Cannot edit past records without administrator approval." + vbCrLf + "Enter password to edit record:", "Enter Password")
+            Dim pass As Integer
+            pass = Authenticate()
             
             'if password was entered correctly
-            If pass = "fire" Then
+            If pass = 1 Then
             
                 'check if data exists in the list
                 If Not (Me.Work_Hours_subform.Form.Recordset.EOF And Me.Work_Hours_subform.Form.Recordset.BOF) Then
@@ -250,11 +317,34 @@ Private Sub editButton_Click()
                         Me.ID = .Fields("ID")
                         Me.Employee = .Fields("Employee")
                         Me.Date_Worked = CDate(.Fields("Date Worked"))
-                        If .Fields("Property/Company") = Null Then
+                        If IsNull(.Fields("Department")) Then
+                            Me.Work_Code.RowSource = "SELECT [Work Codes].ID, [Work Codes].Description FROM [Work Codes] WHERE [Work Codes].Active = -1 ORDER BY [Work Codes].Description"
                         Else
-                            Me.Property_Company = .Fields("Property/Company")
+                        
+                            ' Since .Fields() returns an int, we have to query the DB to get the Description field
+                            Dim GetDeptQuery As String
+                            GetDeptQuery = "SELECT Description FROM Departments WHERE ID=" & .Fields("Department")
+                            Dim myrs As DAO.Recordset
+                            Set myrs = CurrentDb.OpenRecordset(GetDeptQuery)
+                            Dim desc As String
+                            desc = myrs!Description
+                        
+                            ' set the recordsource for work code based on the changed department (uses the previous block for finding the description
+                            Me.Work_Code.RowSource = "SELECT [Work Codes].ID, [Work Codes].Description FROM [Work Codes] WHERE [Work Codes].Active = -1 AND [Work Codes]." & desc & "=-1 ORDER BY [Work Codes].Description;"
+                            Me.Department = .Fields("Department")
                         End If
-                        Me.Work_Code = .Fields("Work Code")
+                        If .Fields("Company") = Null Then
+                        Else
+                            Me.Company = .Fields("Company")
+                        End If
+                        If .Fields("Project") = Null Then
+                        Else
+                            Me.Project = .Fields("Project")
+                        End If
+                        If .Fields("Work Code") = Null Then
+                        Else
+                            Me.Work_Code.Value = .Fields("Work Code")
+                        End If
                         Me.Hours = .Fields("Hours")
                         Me.Work_Description = .Fields("Work Description")
                         
@@ -293,14 +383,36 @@ Private Sub editButton_Click()
                 
                 'get data to text box controls
                 With Me.Work_Hours_subform.Form.Recordset
+                
                     Me.ID = .Fields("ID")
                     Me.Employee = .Fields("Employee")
                     Me.Date_Worked = CDate(.Fields("Date Worked"))
-                    If .Fields("Property/Company") = Null Then
+                    If IsNull(.Fields("Department")) Then
+                        Me.Work_Code.RowSource = "SELECT [Work Codes].ID, [Work Codes].Description FROM [Work Codes] WHERE [Work Codes].Active = -1 ORDER BY [Work Codes].Description"
                     Else
-                        Me.Property_Company = .Fields("Property/Company")
+                        ' Since .Fields() returns an int, we have to query the DB to get the Description field
+                        GetDeptQuery = "SELECT Description FROM Departments WHERE ID=" & .Fields("Department")
+                        Dim myrs2 As DAO.Recordset
+                        Set myrs2 = CurrentDb.OpenRecordset(GetDeptQuery)
+                        Dim desc2 As String
+                        desc2 = myrs2!Description
+                        
+                        ' set the recordsource for work code based on the changed department (uses the previous block for finding the description
+                        Me.Work_Code.RowSource = "SELECT [Work Codes].ID, [Work Codes].Description FROM [Work Codes] WHERE [Work Codes].Active = -1 AND [Work Codes]." & desc2 & "=-1 ORDER BY [Work Codes].Description;"
+                        Me.Department = .Fields("Department")
                     End If
-                    Me.Work_Code = .Fields("Work Code")
+                    If .Fields("Company") = Null Then
+                    Else
+                        Me.Company = .Fields("Company")
+                    End If
+                    If .Fields("Project") = Null Then
+                    Else
+                       Me.Project = .Fields("Project")
+                    End If
+                    If .Fields("Work Code") = Null Then
+                    Else
+                        Me.Work_Code = .Fields("Work Code")
+                    End If
                     Me.Hours = .Fields("Hours")
                     Me.Work_Description = .Fields("Work Description")
                     
@@ -376,9 +488,10 @@ Private Sub Work_Description_KeyPress(KeyAscii As Integer)
     
 End Sub
 
-
+' What happens when the user clicks in the subform
 Private Sub Work_Hours_subform_Enter()
     
+    ' if the add/update button says update
     If Me.addButton.Caption & "" = "Update" Then
     
         'clear the form
@@ -396,5 +509,8 @@ Private Sub Work_Hours_subform_Enter()
     'enable edit button
     Me.editButton.Enabled = True
 End Sub
+
+
+
 
 
