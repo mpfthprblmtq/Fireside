@@ -47,5 +47,6 @@ The third and (hopefully) final iteration of HI-Parser (v3), has an improved (an
   * Possible upcoming features:
     * Creation of a individual unit/building report
     * A sort of "memory" that will allow you to leave off where you started (so you don't have to keep reloading the same spreadsheet)
+    * Logging, so we know what broke and how bad
 
 &copy; Pat Ripley, Fireside Financial 2017-2018
